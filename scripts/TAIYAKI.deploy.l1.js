@@ -2,14 +2,13 @@ const hre = require('hardhat')
 
 async function main () {
   const ethers = hre.ethers
-  const l2ethers = hre.l2ethers
 
   console.log('network:', await ethers.provider.getNetwork())
 
   const signer = (await ethers.getSigners())[0]
   console.log('signer:', await signer.getAddress())
 
-  const TAIYAKI = await l2ethers.getContractFactory('TAIYAKI', {
+  const TAIYAKI = await ethers.getContractFactory('TAIYAKI', {
     signer: (await ethers.getSigners())[0]
   })
 
@@ -22,10 +21,6 @@ async function main () {
     await ethers.provider.getCode(taiyaki.address)
   )
 
-  console.log(
-    'owner:',
-    await taiyaki.owner()
-  )
   console.log(
     'initial supply:',
     await taiyaki.totalSupply()

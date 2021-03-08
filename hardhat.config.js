@@ -1,7 +1,9 @@
 require('dotenv').config()
 require('@nomiclabs/hardhat-ethers')
-require('@eth-optimism/plugins/hardhat/compiler')
-require('@eth-optimism/plugins/hardhat/ethers')
+// require('@eth-optimism/plugins/hardhat/compiler')
+// require('@eth-optimism/plugins/hardhat/ethers')
+
+
 
 
 module.exports = {
@@ -11,16 +13,17 @@ module.exports = {
       accounts: [process.env.PRIVATE_KEY],
       gasPrice: 0,
       gas: 9000000
+    },
+    ropsten: {
+      url: process.env.L1_NODE_URL,
+      accounts: [process.env.PRIVATE_KEY]
     }
   },
   solidity: {
     compilers: [
       {
-        version: '0.7.3'
+        version: '0.6.2'
       }
     ]
-  },
-  solc: {
-    path: '@eth-optimism/solc-v0.5.16',
-  },
+  }
 }

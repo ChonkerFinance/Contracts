@@ -8,8 +8,10 @@
   },
   "scripts": {
     "test": "npm run clean && hardhat test",
-    "build": "npm run clean && hardhat compile --network optimism",
-    "deploy": "hardhat run scripts/TAIYAKI.deploy.js --network optimism",
+    "build_l1": "npm run clean && hardhat compile --network ropsten",
+    "build_l2": "npm run clean && hardhat compile --network optimism",
+    "deploy_l2": "hardhat run scripts/TAIYAKI.deploy.l2.js --network optimism",
+    "deploy_l1": "hardhat run scripts/TAIYAKI.deploy.l1.js --network ropsten",
     "lint": "prettier-standard --format",
     "clean": "rimraf cache artifacts"
   },
@@ -18,8 +20,9 @@
   "devDependencies": {
     "@eth-optimism/plugins": "0.0.4",
     "@nomiclabs/hardhat-ethers": "2.0.1",
+    "@openzeppelin/contracts": "^3.2.0",
     "dotenv": "8.2.0",
-    "hardhat": "2.0.8",
+    "hardhat": "^2.0.8",
     "prettier-standard": "16.4.1",
     "rimraf": "3.0.2"
   },
