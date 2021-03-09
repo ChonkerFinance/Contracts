@@ -71,4 +71,9 @@ contract TaiyakiFISHSwap is ReentrancyGuard, Pausable, Ownable {
         emit Swapped(msg.sender, tokenAddress, taiyakiAmount);
     }
 
+    function withdrawToken(address tokenAddress, uint256 amount) external nonReentrant onlyOwner {
+        IERC20 token = IERC20(tokenAddress);
+        token.transfer(msg.sender, amount);
+    }
+
 }
