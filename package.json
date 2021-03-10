@@ -8,10 +8,10 @@
   },
   "scripts": {
     "test": "npm run clean && hardhat test",
-    "build_l1": "npm run clean && hardhat compile --network ropsten",
+    "build_l1": "npm run clean && hardhat compile --network rinkeby",
     "build_l2": "npm run clean && hardhat compile --network optimism",
     "deploy_l2": "hardhat run scripts/TAIYAKI.deploy.l2.js --network optimism",
-    "deploy_l1": "hardhat run scripts/TAIYAKI.deploy.l1.js --network ropsten",
+    "deploy_l1": "hardhat run scripts/TAIYAKI.deploy.l1.js --network rinkeby",
     "lint": "prettier-standard --format",
     "clean": "rimraf cache artifacts"
   },

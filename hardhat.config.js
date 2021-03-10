@@ -14,7 +14,7 @@ module.exports = {
       gasPrice: 0,
       gas: 9000000
     },
-    ropsten: {
+    rinkeby: {
       url: process.env.L1_NODE_URL,
       accounts: [process.env.PRIVATE_KEY]
     }

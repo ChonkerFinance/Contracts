@@ -8,6 +8,14 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
+interface IChonkNFT {
+  function safeTransferFrom(address from,
+        address to,
+        uint256 id,
+        uint256 amount,
+        bytes calldata data) external;
+  function balanceOf(address account, uint256 id) external view returns (uint256);
+}
 
 contract TaiyakiFISHSwap is ReentrancyGuard, Pausable, Ownable {
     
@@ -15,22 +23,24 @@ contract TaiyakiFISHSwap is ReentrancyGuard, Pausable, Ownable {
 
     /* TAIYAKI Token */
     address public taiyakiAddress;
+    address public NFTAddress;
 
-    /* Pairs to swap token_address - price ex: price: 100 => 100 token = 1 taiyaki*/
-    mapping(address => uint) public pairs;
+    /* Pairs to swap NFT _id => price */
+    mapping(uint256 => uint256) public pairs;
 
     /* How many tokens we have successfully swapped */
     uint256 public totalSwapped;
 
     event TaiyakiAddressUpdated(address token);
-    event PairUpdated(address token, uint price);
-    event PairDeleted(address token);
-
+    event NFTAddressUpdated(address nft);
+    event PairAdded(uint256 id, uint256 price);
+    
     /* For following in the dashboard */
-    event Swapped(address indexed owner, address token, uint256 amount);
+    event Swapped(address indexed owner, uint256 id, uint256 amount);
 
-    constructor(address _taiyaki) public {
+    constructor(address _taiyaki, address _nft) public {
         taiyakiAddress = _taiyaki;
+        NFTAddress = _nft;
         totalSwapped = 0;
     }
 
@@ -40,40 +50,31 @@ contract TaiyakiFISHSwap is ReentrancyGuard, Pausable, Ownable {
         emit TaiyakiAddressUpdated(_address);
     }
 
-    function updatePair(address _token, uint _price) external onlyOwner {
-        require(_price > 0, "Price should be greater than zero");
+    function setNFTAddress(address _address) external onlyOwner {
+        NFTAddress = _address;
 
-        pairs[_token] = _price;
-        emit PairUpdated(_token, _price);
+        emit NFTAddressUpdated(_address);
     }
 
-    function removePair(address _token) external onlyOwner {
-        require(pairs[_token] != 0x0, "Not exist on pair");
-
-        delete pairs[_token];
-        emit PairDeleted(_token);
+    function addPair(uint256 _id, uint256 _price) public onlyOwner {
+        pairs[_id] = _price;
+        emit PairAdded(_id, _price);
     }
 
-    function swap(address tokenAddress, uint256 amount) external nonReentrant whenNotPaused {
-        require(pairs[tokenAddress] != 0x0, "Not exist such pair");
+    
+    function swap(uint256 _id, uint256 _amount) external nonReentrant whenNotPaused {
+        require(pairs[_id] != 0x0, "Can not find Pair");
 
-        address swapper = address(this);
-        IERC20 token = IERC20(tokenAddress);
-        require(token.allowance(msg.sender, swapper) >= amount, "You need to first approve() enough tokens to swap for this contract");
-        require(token.balanceOf(msg.sender) >= amount, "You do not have enough tokens to swap");
+        IChonkNFT nft = IChonkNFT(NFTAddress);
+        require(nft.balanceOf(msg.sender, _id) >= _amount, "You do not have enough tokens to swap");
 
-        uint256 taiyakiAmount = amount.mul(pairs[tokenAddress]);
+        uint256 taiyakiAmount = _amount.mul(1e18).div(pairs[_id]);
         
         totalSwapped += taiyakiAmount;
-        require(token.transferFrom(msg.sender, swapper, amount), "Could not retrieve tokens");
+        nft.safeTransferFrom(msg.sender, 0x000000000000000000000000000000000000dEaD, _id, _amount, "");
+
         ERC20PresetMinterPauser(taiyakiAddress).mint(msg.sender, taiyakiAmount);
 
-        emit Swapped(msg.sender, tokenAddress, taiyakiAmount);
+        emit Swapped(msg.sender, _id, taiyakiAmount);
     }
-
-    function withdrawToken(address tokenAddress, uint256 amount) external nonReentrant onlyOwner {
-        IERC20 token = IERC20(tokenAddress);
-        token.transfer(msg.sender, amount);
-    }
-
 }

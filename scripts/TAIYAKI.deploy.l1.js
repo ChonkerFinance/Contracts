@@ -8,23 +8,23 @@ async function main () {
   const signer = (await ethers.getSigners())[0]
   console.log('signer:', await signer.getAddress())
 
-  // const TAIYAKI = await ethers.getContractFactory('TAIYAKI', {
-  //   signer: (await ethers.getSigners())[0]
-  // })
+  const TAIYAKI = await ethers.getContractFactory('TAIYAKI', {
+    signer: (await ethers.getSigners())[0]
+  })
 
-  // const taiyaki = await TAIYAKI.deploy()
-  // await taiyaki.deployed()
+  const taiyaki = await TAIYAKI.deploy()
+  await taiyaki.deployed()
 
-  // console.log('TAIYAKI deployed to:', taiyaki.address)
-  // console.log(
-  //   'deployed bytecode:',
-  //   await ethers.provider.getCode(taiyaki.address)
-  // )
+  console.log('TAIYAKI deployed to:', taiyaki.address)
+  console.log(
+    'deployed bytecode:',
+    await ethers.provider.getCode(taiyaki.address)
+  )
 
-  // console.log(
-  //   'initial supply:',
-  //   await taiyaki.totalSupply()
-  // )
+  console.log(
+    'initial supply:',
+    await taiyaki.totalSupply()
+  )
 
   console.log('Deploying Swap contract')
 
@@ -32,7 +32,7 @@ async function main () {
     signer: (await ethers.getSigners())[0]
   })
 
-  const swap = await FISHSwap.deploy('0x3Db1fFfEFED039EdFA96a094f8fcF34853Cfa3E2')
+  const swap = await FISHSwap.deploy(taiyaki.address, '0x802Ecd670aAf08311cc8BD887B3e1D9F419e0496')
   await swap.deployed()
 
   console.log('Swap  deployed to:', swap.address)
