@@ -3,7 +3,7 @@ require('@nomiclabs/hardhat-ethers')
 // require('@eth-optimism/plugins/hardhat/compiler')
 // require('@eth-optimism/plugins/hardhat/ethers')
 
-
+require("@nomiclabs/hardhat-etherscan");
 
 
 module.exports = {
@@ -25,5 +25,8 @@ module.exports = {
         version: '0.6.2'
       }
     ]
+  },
+  etherscan: {
+    apiKey: "VAQR1ZTXINETMQ7PGPFGSY6HZSZ93JBQDE"
   }
 }
