@@ -18,11 +18,43 @@ interface IChonkNFT {
   function balanceOf(address account, uint256 id) external view returns (uint256);
 }
 
-contract TaiyakiFISHSwap is ReentrancyGuard, Pausable, Ownable, AccessControl {
+contract GachaponGame is ReentrancyGuard, Pausable, Ownable, AccessControl {
     
     using SafeMath for uint256;
 
     bytes32 public constant TEAM_ROLE = keccak256("TEAM_ROLE");
     bytes32 public constant ARTIST_ROLE = keccak256("ARTIST_ROLE");
+
+    /* Team Address */
+    address public teamAddress;
+
+    /* Gachapon Machine Options */
+    uint256[8][] public options;     // [Team?, ETH-Spin?, TaiyakiLP %, Chonk Buyback %, Chonk LP %, Team Funds %, Artist Funds%, Burn %]
+
+
+    
+    constructor(address _team) public {
+        teamAddress = _team;
+
+        options.push([1, 1, 40, 40,  0, 20,  0,  0]);
+        options.push([1, 0, 40, 40,  0, 20,  0,  0]);
+        options.push([1, 0, 80,  0,  0, 20,  0,  0]);
+        options.push([1, 0,  0,  0,  0, 20,  0, 80]);
+        options.push([1, 1,  0,  0, 80, 20,  0,  0]);
+        options.push([0, 1, 20,  0,  0, 20, 60,  0]);
+        options.push([0, 0, 20,  0,  0, 20, 60,  0]);
+    }
+
+    function getOptionLength() public view returns (uint256) {
+        return options.length;
+    }
+
+    function getOption(uint256 idx) public view returns (uint256[8] memory) {
+        require(idx < getOptionLength(), "invalid idx");
+
+        return options[idx];
+    }
+
+    
 
 }
