@@ -2,7 +2,6 @@
 pragma solidity ^0.6.2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/presets/ERC20PresetMinterPauser.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
@@ -46,6 +45,9 @@ contract GachaponGame is ReentrancyGuard, Pausable, Ownable, AccessControl {
     /* NFT Token Address */
     address public nftAddress;
 
+    /* Taiyaki Token Address */
+    address public taiyakiAddress;
+
     /* Gachapon Machine Options */
     uint256[8][] public options;     // [Team?, ETH-Spin?, TaiyakiLP %, Chonk Buyback %, Chonk LP %, Team Funds %, Artist Funds%, Burn %]
 
@@ -67,11 +69,12 @@ contract GachaponGame is ReentrancyGuard, Pausable, Ownable, AccessControl {
 
     event NFTAdded(uint256 m_id, uint256 id, uint256 amount);       
 
+    event GamePlayed(uint256 m_id, uint246 count);
 
-
-    constructor(address _team, address _nft) public {
+    constructor(address _team, address _nft, address _taiyaki) public {
         teamAddress = _team;
         nftAddress = _nft;
+        taiyakiAddress = _taiyaki;
 
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _setupRole(TEAM_ROLE, _msgSender());
@@ -223,8 +226,38 @@ contract GachaponGame is ReentrancyGuard, Pausable, Ownable, AccessControl {
         emit NFTAdded(_m_idx, _nft_id, _amount);
     }
 
-    function play(uint256 _m_idx, uint256 _count) external {
+    function play(uint256 _m_idx, uint256 _count) payable public {
+        Machine storage m = machines[_m_idx];
+        require(m.artist != address(0x0),  "invalid machine id");
+        require(m.locked == false,  "machine is locked now");
 
+        uint256 amount = m.rate.mul(_count);
+        uint256[8] memory option = getOption(m.option_idx);
+
+        if(option[1] == 1) {  // ETH spin
+            require(amount >= msg.value, "insufficient eth amount");
+        }else {               // Taiyaki Spin
+            IERC20 taiyakiToken = IERC20(taiyakiAddress);
+            uint256 allowance = taiyakiToken.allowance(msg.sender, address(this));
+            require(allowance >= amount, "Check the TAIYAKI token allowance");
+            taiyakiToken.transferFrom(msg.sender, address(this), amount);
+        }
+
+        // NFT Random select
+        uint256[] memory ids = new uint256[](_count);
+        uint256[] memory amounts = new uint256[](_count);
+        for(uint8 i = 0 ; i < _count; i++) {
+            ids[i] = random(m.nfts.length);
+            amounts[i] = 1;
+        }
+
+        IChonkNFT(nftAddress).safeBatchTransferFrom(address(this), msg.sender, ids, amounts, "");
+
+        emit GamePlayed(_m_idx, _count);
+    }
+
+    function random(uint256 maxVal) private view returns (uint256) {
+        return uint256(keccak256(block.timestamp, block.difficulty)).mod(maxVal);
     }
 
      // fallback- receive Ether
