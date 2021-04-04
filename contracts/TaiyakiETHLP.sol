@@ -1,4 +1,4 @@
-// TAIYAKI / ETH LP Pool
+// TAIYAKI / ETH LP Pool  - Chonker.Finance
 pragma solidity ^0.6.2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
