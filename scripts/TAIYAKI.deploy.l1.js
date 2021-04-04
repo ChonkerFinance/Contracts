@@ -1,5 +1,7 @@
 const hre = require('hardhat')
 
+const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay * 1000));
+
 async function main () {
   const ethers = hre.ethers
 
@@ -8,46 +10,123 @@ async function main () {
   const signer = (await ethers.getSigners())[0]
   console.log('signer:', await signer.getAddress())
 
+  const deployFlags = {
+    chonkToken: false,
+    chonkNFTToken: false,
+    taiyakiToken: false,
+    taiyakiLPToken: false,
+    taiyakiLPPool: false,
+    taiyakiFishSwap: false,
+    GachaponGame: false,
+    NFTManager: true,
+  }
+
+  let taiyakiTokenAddress = "";
+  let taiyakiLPTokenAddress = "";
+  let NFTTokenAddress = "0x645B5be3911fAb09308598fE591962910185B84d";
+
+  /**
+   *  Taiyaki LP Token Deploy
+   */
+   if(deployFlags.taiyakiLPToken) {
+    console.log(' --------------------------------------- ')
+    const TaiyakiLP = await ethers.getContractFactory('TAIYAKILP', {
+      signer: (await ethers.getSigners())[0]
+    })
+  
+    const taiyakiLP = await TaiyakiLP.deploy();
+    await taiyakiLP.deployed()
+
+    console.log('TAIYAKI-ETH LP token deployed to:', taiyakiLP.address)
+    
+    await sleep(60);
+    await hre.run("verify:verify", {
+      address: taiyakiLP.address,
+      contract: "contracts/TAIYAKILP.sol:TAIYAKILP",
+      constructorArguments: [],
+    })
+
+    taiyakiLPTokenAddress = taiyakiLP.address;
+  
+    console.log('Taiyaki-ETH LP Token contract verified')
+  }
+
+  /**
+   *  ChonkNFT Token Deploy
+   */
+   if(deployFlags.chonkNFTToken) {
+    console.log(' --------------------------------------- ')
+    const ChonkNFT = await ethers.getContractFactory('ChonkNFT', {
+      signer: (await ethers.getSigners())[0]
+    })
+  
+    const nft = await ChonkNFT.deploy()
+    await nft.deployed()
+  
+    console.log('Chonk NFT deployed to:', nft.address)
+    await sleep(60);
+    await hre.run("verify:verify", {
+      address: nft.address,
+      contract: "contracts/ChonkNFT.sol:ChonkNFT",
+      constructorArguments: [],
+    })
+
+    NFTTokenAddress = nft.address;
+  
+    console.log('Chonk NFT Token contract verified')
+  }
+
   /**
    *  Taiyaki Token Deploy
    */
-  // const TAIYAKI = await ethers.getContractFactory('TAIYAKI', {
-  //   signer: (await ethers.getSigners())[0]
-  // })
+  if(deployFlags.taiyakiToken) {
+    console.log(' --------------------------------------- ')
+    const TAIYAKI = await ethers.getContractFactory('TAIYAKI', {
+      signer: (await ethers.getSigners())[0]
+    })
+  
+    const taiyaki = await TAIYAKI.deploy()
+    await taiyaki.deployed()
+  
+    console.log('TAIYAKI deployed to:', taiyaki.address)
+    await sleep(60);
+    await hre.run("verify:verify", {
+      address: taiyaki.address,
+      contract: "contracts/TAIYAKI.sol:TAIYAKI",
+      constructorArguments: [],
+    })
 
-  // const taiyaki = await TAIYAKI.deploy()
-  // await taiyaki.deployed()
-
-  // console.log('TAIYAKI deployed to:', taiyaki.address)
-  // console.log(
-  //   'deployed bytecode:',
-  //   await ethers.provider.getCode(taiyaki.address)
-  // )
-
-  // console.log(
-  //   'initial supply:',
-  //   await taiyaki.totalSupply()
-  // )
+    taiyakiTokenAddress = taiyaki.address;
+  
+    console.log('Taiyaki Token contract verified')
+  }
 
   // /**
   //  *  Taiyaki - FISH swap Deploy
   //  *  Should add pairs  
   //  */
+  if(deployFlags.taiyakiFishSwap) {
+    console.log(' --------------------------------------- ')
+    console.log('Deploying Taiyaki - FISH swap contract')
 
-  // console.log('Deploying Swap contract')
+    const FISHSwap = await ethers.getContractFactory('TaiyakiFISHSwap', {
+      signer: (await ethers.getSigners())[0]
+    })
 
-  // const FISHSwap = await ethers.getContractFactory('TaiyakiFISHSwap', {
-  //   signer: (await ethers.getSigners())[0]
-  // })
+    const swap = await FISHSwap.deploy(taiyakiTokenAddress, NFTTokenAddress)
+    await swap.deployed()
 
-  // const swap = await FISHSwap.deploy(taiyaki.address, '0x802Ecd670aAf08311cc8BD887B3e1D9F419e0496')
-  // await swap.deployed()
-
-  // console.log('Swap  deployed to:', swap.address)
-  // console.log(
-  //   'deployed bytecode:',
-  //   await ethers.provider.getCode(swap.address)
-  // )
+    console.log('Swap  deployed to:', swap.address)
+    await sleep(60);
+    await hre.run("verify:verify", {
+      address: swap.address,
+      contract: "contracts/TaiyakiFISHSwap.sol:TaiyakiFISHSwap",
+      constructorArguments: [
+        taiyakiTokenAddress,
+        NFTTokenAddress
+      ],
+    })
+  }
 
 
   /**
@@ -56,30 +135,60 @@ async function main () {
    *  should set Reward per week : default : 10%
    *  should grant Minter role to this contract from Taiyaki Token contract 
    */
-  console.log('Deploying Taiyaki/ETH LP contract')
+  if(deployFlags.taiyakiLPPool) {
+    console.log(' --------------------------------------- ')
+    console.log('Deploying Taiyaki/ETH LP contract')
 
-  const TaiyakiETH = await ethers.getContractFactory('TaiyakiETHLP', {
-    signer: (await ethers.getSigners())[0]
-  })
+    const TaiyakiETH = await ethers.getContractFactory('TaiyakiETHLP', {
+      signer: (await ethers.getSigners())[0]
+    })
+  
+    const lp = await TaiyakiETH.deploy(taiyakiLPTokenAddress, taiyakiTokenAddress)
+    await lp.deployed()
+  
+    console.log('LP Pool  deployed to:', lp.address)
+    await sleep(60);
+    await hre.run("verify:verify", {
+      address: lp.address,
+      contract: "contracts/TaiyakiETHLP.sol:TaiyakiETHLP",
+      constructorArguments: [
+        taiyakiLPTokenAddress,
+        taiyakiTokenAddress
+      ],
+    })
+  
+    console.log('LP Pool contract verified')
+  }
+  
+  /**
+   *  NFT Manager Contract
+   *  should set ChonkNFT token contract address
+   *  add default admin role and minter role to this contract from ChonkNFT
+   *  add whitelist after deployed
+   */
+   if(deployFlags.NFTManager) {
+    console.log(' --------------------------------------- ')
+    console.log('Deploying NFTManager contract')
 
-  const lp = await TaiyakiETH.deploy('0x9908565B335873aDbd2E6B02371C1236ED0Ec72c', '0x212B2ee3C5F7cBaA5833456a600BED4538e49803')
-  await lp.deployed()
-
-  console.log('LP Pool  deployed to:', lp.address)
-  console.log(
-    'deployed bytecode:',
-    await ethers.provider.getCode(lp.address)
-  )
-
-  await hre.run("verify:verify", {
-    address: lp.address,
-    constructorArguments: [
-      '0x9908565B335873aDbd2E6B02371C1236ED0Ec72c',
-      '0x212B2ee3C5F7cBaA5833456a600BED4538e49803'
-    ],
-  })
-
-  console.log('LP Pool contract verified')
+    const NFTManager = await ethers.getContractFactory('NFTManager', {
+      signer: (await ethers.getSigners())[0]
+    })
+  
+    const manager = await NFTManager.deploy(NFTTokenAddress)
+    await manager.deployed()
+  
+    console.log('NFT Manager  deployed to:', manager.address)
+    await sleep(60);
+    await hre.run("verify:verify", {
+      address: manager.address,
+      contract: "contracts/NFTManager.sol:NFTManager",
+      constructorArguments: [
+        NFTTokenAddress
+      ],
+    })
+  
+    console.log('NFT Manager contract verified')
+  }
 
 }
 
