@@ -15,14 +15,14 @@ async function main () {
     chonkNFTToken: false,
     taiyakiToken: false,
     taiyakiLPToken: false,
-    taiyakiLPPool: false,
+    taiyakiLPPool: true,
     taiyakiFishSwap: false,
     GachaponGame: false,
-    NFTManager: true,
+    NFTManager: false,
   }
 
-  let taiyakiTokenAddress = "";
-  let taiyakiLPTokenAddress = "";
+  let taiyakiTokenAddress = "0x74EC08059497BD01A6516Ac9D0218bc658d66e99";
+  let taiyakiLPTokenAddress = "0xfbA2d9bB0Ce8dccF6Be68d63C303DAc7fc82fE39";
   let NFTTokenAddress = "0x645B5be3911fAb09308598fE591962910185B84d";
 
   /**

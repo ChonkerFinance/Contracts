@@ -57,7 +57,7 @@ contract TaiyakiETHLP is ReentrancyGuard, Pausable, Ownable {
         taiyakiAddress = _taiyaki;
         rewardPerWeek = 10;
         unstakingFee = 1;
-        feeAddress = 0x1DdCc7eBdB24202262DA6cc2098Cf391f8f69b95;
+        feeAddress = 0x98B48C1B9654C0bda3cB7A1561b930E754A6641F;
         totalStaked = 0;
     }
 
@@ -73,13 +73,20 @@ contract TaiyakiETHLP is ReentrancyGuard, Pausable, Ownable {
         emit RewardPerWeekUpdated(_reward);
     }
 
+    function setUnstakingFee(uint256 _fee) external onlyOwner {
+        require(_fee < 100, "Unstaking fee is too big");
+
+        unstakingFee = _fee;
+    }
+
     function balanceOf(address account) public view returns (uint256) {
         return balances[account];
     }
 
     function earned(address account) public view returns (uint256) {
         uint256 blockTime = block.timestamp;
-        return rewards[account].add(blockTime.sub(lastUpdated[account]).mul(1e18).div(604800).mul(balanceOf(account).mul(rewardPerWeek).div(1e20)));
+        uint256 amount = blockTime.sub(lastUpdated[account]).mul(balanceOf(account)).mul(rewardPerWeek).div(6048);
+        return rewards[account].add(amount);
     }
 
     

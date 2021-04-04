@@ -16,7 +16,7 @@ contract TAIYAKI is ERC20, Ownable, AccessControl  {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _setupRole(MINTER_ROLE, _msgSender());
 
-        _mint(0x8C4d15Bf08b4F2730c0aaaa52CaC6130b77e7681, 5e20);
+        _mint(0xFA3916579cFD0F4B8193B144fc9D6Ce14dfdb082, 1.6e21);
     }
 
     function mint(address to, uint256 value) public {
