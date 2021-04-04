@@ -85,7 +85,7 @@ contract TaiyakiETHLP is ReentrancyGuard, Pausable, Ownable {
 
     function earned(address account) public view returns (uint256) {
         uint256 blockTime = block.timestamp;
-        uint256 amount = blockTime.sub(lastUpdated[account]).mul(balanceOf(account)).mul(rewardPerWeek).div(6048);
+        uint256 amount = blockTime.sub(lastUpdated[account]).mul(balanceOf(account)).mul(rewardPerWeek).div(60480000);
         return rewards[account].add(amount);
     }
 
