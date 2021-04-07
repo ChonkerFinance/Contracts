@@ -15,10 +15,10 @@ async function main () {
     chonkNFTToken: false,
     taiyakiToken: false,
     taiyakiLPToken: false,
-    taiyakiLPPool: true,
+    taiyakiLPPool: false,
     taiyakiFishSwap: false,
-    GachaponGame: false,
     NFTManager: false,
+    ChonkMachineManager: true,
   }
 
   let taiyakiTokenAddress = "0x74EC08059497BD01A6516Ac9D0218bc658d66e99";
@@ -166,7 +166,7 @@ async function main () {
    *  add default admin role and minter role to this contract from ChonkNFT
    *  add whitelist after deployed
    */
-   if(deployFlags.NFTManager) {
+  if(deployFlags.NFTManager) {
     console.log(' --------------------------------------- ')
     console.log('Deploying NFTManager contract')
 
@@ -188,6 +188,37 @@ async function main () {
     })
   
     console.log('NFT Manager contract verified')
+  }
+
+
+  /**
+   *  ChonkMachineManager Contract
+   *  should set Team, ChonkNFT, Taiyaki contract address
+   *  
+   *  
+   */
+   if(deployFlags.ChonkMachineManager) {
+    console.log(' --------------------------------------- ')
+    console.log('Deploying ChonkMachineManager contract')
+
+    const ChonkMachineManager = await ethers.getContractFactory('ChonkMachineManager', {
+      signer: (await ethers.getSigners())[0]
+    })
+  
+    const manager = await ChonkMachineManager.deploy("0xc2A79DdAF7e95C141C20aa1B10F3411540562FF7", NFTTokenAddress, taiyakiTokenAddress, "0xc778417e063141139fce010982780140aa0cd5ab")
+    await manager.deployed()
+  
+    console.log('ChonkMachineManager  deployed to:', manager.address)
+    await sleep(60);
+    await hre.run("verify:verify", {
+      address: manager.address,
+      contract: "contracts/ChonkMachineManager.sol:ChonkMachineManager",
+      constructorArguments: [
+        "0xc2A79DdAF7e95C141C20aa1B10F3411540562FF7", NFTTokenAddress, taiyakiTokenAddress, "0xc778417e063141139fce010982780140aa0cd5ab"
+      ],
+    })
+  
+    console.log('ChonkMachineManager contract verified')
   }
 
 }
