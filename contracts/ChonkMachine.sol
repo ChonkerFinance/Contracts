@@ -222,60 +222,19 @@ contract ChonkMachine {
      */
     function _transferAndBurnToken(uint256 amount) private {
         uint256 totalPaid = 0;
-        // 1. For Team.
+        uint256[6] memory rates = [forTeamRate, forArtistRate, forBurnRate, forTaiyakiLPRate, forBuybackRate, forChonkLPRate];
+        uint256[6] memory totalAmounts = [totalAmountForTeam, totalAmountForArtist, totalAmountForBurn, totalAmountForTaiyakiLP, totalAmountForBuybackChonk, totalAmountForChonkLP];
+        address[6] memory accounts = [teamAccount, artistAccount, burnAccount, liquidityAccount, liquidityAccount, liquidityAccount];
         uint256 forTeamAmount = 0;
-        if (forTeamRate != 0) {
-            forTeamAmount = amount.mul(forTeamRate).div(100);
-            currencyToken.transferFrom(msg.sender, teamAccount, forTeamAmount);
-            totalAmountForTeam = totalAmountForTeam.add(forTeamAmount);
-            totalPaid = totalPaid.add(forTeamAmount);
+        for(uint i = 0 ; i < 6; i++) {
+            if(rates[i] != 0) {
+                uint256 rateAmount = amount.mul(rates[i]).div(100);
+                currencyToken.transferFrom(msg.sender, accounts[i], rateAmount);
+                totalAmounts[i] = totalAmounts[i].add(rateAmount);
+                totalPaid = totalPaid.add(rateAmount);
+            }
         }
-
-        // 2. For Artist.
-        uint256 forArtistAmount = 0;
-        if (forArtistRate != 0) {
-            forArtistAmount = amount.mul(forArtistRate).div(100);
-            currencyToken.transferFrom(msg.sender, teamAccount, forArtistAmount);
-            totalAmountForArtist = totalAmountForArtist.add(forArtistAmount);
-            totalPaid = totalPaid.add(forArtistAmount);
-        }
-
-        // 3. For Burn.
-        uint256 forBurnAmount = 0;
-        if (forBurnRate != 0) {
-            forBurnAmount = amount.mul(forBurnRate).div(100);
-            currencyToken.transferFrom(msg.sender, burnAccount, forBurnAmount);
-            totalAmountForBurn = totalAmountForBurn.add(forBurnAmount);
-            totalPaid = totalPaid.add(forBurnAmount);
-        }
-
-        // 4. Taiyaki LP
-        uint256 forTaiyakiLP = 0;
-        if (forTaiyakiLPRate != 0) {
-            forTaiyakiLP = amount.mul(forTaiyakiLPRate).div(100);
-            currencyToken.transferFrom(msg.sender, liquidityAccount, forTaiyakiLP);
-            totalAmountForTaiyakiLP = totalAmountForTaiyakiLP.add(forTaiyakiLP);
-            totalPaid = totalPaid.add(forTaiyakiLP);
-        }
-    
-        // 5. Chonk BuyBack
-        uint256 forChonkBuybackAmount = 0;
-        if (forTaiyakiLPRate != 0) {
-            forChonkBuybackAmount = amount.mul(forBuybackRate).div(100);
-            currencyToken.transferFrom(msg.sender, liquidityAccount, forChonkBuybackAmount);
-            totalAmountForBuybackChonk = totalAmountForBuybackChonk.add(forChonkBuybackAmount);
-            totalPaid = totalPaid.add(forChonkBuybackAmount);
-        }
-
-        // 6. Chonk LP
-        uint256 forChonkLPAmount = 0;
-        if (forChonkLPRate != 0) {
-            forChonkLPAmount = amount.mul(forChonkLPRate).div(100);
-            currencyToken.transferFrom(msg.sender, liquidityAccount, forChonkLPAmount);
-            totalAmountForChonkLP = totalAmountForChonkLP.add(forChonkLPAmount);
-            totalPaid = totalPaid.add(forChonkLPAmount);
-        }
-
+        
         // 3. tansfer token remaining to team account.
         uint256 remainingAmount = amount.sub(totalPaid);
         currencyToken.transferFrom(msg.sender, teamAccount, remainingAmount);

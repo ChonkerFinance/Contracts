@@ -60,6 +60,10 @@ contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
         return options[idx];
     }
 
+    function getOptionLength() public view returns (uint256) {
+        return options.length;
+    }
+
     function addMachine(string calldata _title, string calldata _description, uint256 _option_idx, uint256 _price, address _owner) 
         external nonReentrant  returns(uint256) {
 
