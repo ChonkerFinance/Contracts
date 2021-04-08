@@ -32,9 +32,9 @@ contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
     event MachineOptionUpdated(address addr, uint256 option_id);
     event MachineDeleted(address addr);
     
-    constructor(address _team, address liquidityAccount, address _nft, address _taiyaki, address _weth) public {
+    constructor(address _team, address _liquidityAccount, address _nft, address _taiyaki, address _weth) public {
         teamAccount = _team;
-        liquidityAccount = liquidityAccount;
+        liquidityAccount = _liquidityAccount;
         nftAddress = _nft;
         taiyakiAddress = _taiyaki;
         wethAddress = _weth;

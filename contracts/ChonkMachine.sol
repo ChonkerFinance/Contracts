@@ -251,9 +251,30 @@ contract ChonkMachine {
 
         // 4. Taiyaki LP
         uint256 forTaiyakiLP = 0;
-       
+        if (forTaiyakiLPRate != 0) {
+            forTaiyakiLP = amount.mul(forTaiyakiLPRate).div(100);
+            currencyToken.transferFrom(msg.sender, liquidityAccount, forTaiyakiLP);
+            totalAmountForTaiyakiLP = totalAmountForTaiyakiLP.add(forTaiyakiLP);
+            totalPaid = totalPaid.add(forTaiyakiLP);
+        }
+    
         // 5. Chonk BuyBack
+        uint256 forChonkBuybackAmount = 0;
+        if (forTaiyakiLPRate != 0) {
+            forChonkBuybackAmount = amount.mul(forBuybackRate).div(100);
+            currencyToken.transferFrom(msg.sender, liquidityAccount, forChonkBuybackAmount);
+            totalAmountForBuybackChonk = totalAmountForBuybackChonk.add(forChonkBuybackAmount);
+            totalPaid = totalPaid.add(forChonkBuybackAmount);
+        }
+
         // 6. Chonk LP
+        uint256 forChonkLPAmount = 0;
+        if (forChonkLPRate != 0) {
+            forChonkLPAmount = amount.mul(forChonkLPRate).div(100);
+            currencyToken.transferFrom(msg.sender, liquidityAccount, forChonkLPAmount);
+            totalAmountForChonkLP = totalAmountForChonkLP.add(forChonkLPAmount);
+            totalPaid = totalPaid.add(forChonkLPAmount);
+        }
 
         // 3. tansfer token remaining to team account.
         uint256 remainingAmount = amount.sub(totalPaid);
