@@ -42,7 +42,8 @@ contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
 
         _initOptions();
 
-        _setupRole(STAFF_ROLE, owner());
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(STAFF_ROLE, msg.sender);
     }
 
     function _initOptions() internal {
@@ -145,12 +146,16 @@ contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
         require(account != address(0), "new administrator is zero address");
         
         grantRole(STAFF_ROLE, account);
+        grantRole(DEFAULT_ADMIN_ROLE, account);
 
         for(uint256 i = 0; i < machineIndices.length; i++) {
             (bool success, ) = machineIndices[i].delegatecall(
                 abi.encodeWithSignature("transferAdministrator(address)", account)
             );
         }
+        revokeRole(STAFF_ROLE, msg.sender);
+        revokeRole(DEFAULT_ADMIN_ROLE, msg.sender);
+
         transferOwnership(account);
     }
 
