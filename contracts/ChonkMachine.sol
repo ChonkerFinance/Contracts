@@ -42,10 +42,8 @@ contract ChonkMachine {
     string public machineTitle;
     string public machineDescription;
     string public machineUri;
-    // machine type. 0: Taiyaki machine, 1: ETH machine.
-    uint256 public machineType = 1;
-    // machine owner: 0: Artist Machine, 1: Team Machine
-    uint256 public machineOwner = 1; 
+    // [Team?, ETH-Spin?, TaiyakiLP %, Chonk Buyback %, Chonk LP %, Team Funds %, Artist Funds%, Burn %]
+    uint256[8] public machineOption;
     bool public maintaining = true;
     bool public banned = false;
 
@@ -62,20 +60,8 @@ contract ChonkMachine {
     uint256 public shuffleCount = 20;
 
      //[TaiyakiLP %, Chonk Buyback %, Chonk LP %, Team Funds %, Artist Funds%, Burn %] 
-    uint256 public forTaiyakiLPRate = 0;
-    uint256 public forChonkLPRate = 0;
-    uint256 public forBuybackRate = 0;
-    uint256 public forBurnRate = 0;
-    uint256 public forArtistRate = 0;
-    uint256 public forTeamRate = 0;
-
-    uint256 public totalAmountForTaiyakiLP;
-    uint256 public totalAmountForChonkLP;
-    uint256 public totalAmountForBuybackChonk;
-    uint256 public totalAmountForBurn;
-    uint256 public totalAmountForArtist;
-    uint256 public totalAmountForTeam;
-
+    uint256[6] public totalAmounts;
+    
     address public burnAccount;
     address public artistAccount;
     address public teamAccount;
@@ -83,6 +69,7 @@ contract ChonkMachine {
 
     EnumerableSet.AddressSet private _staffAccountSet;
     
+    address public manager;
     address public owner;
     address public administrator;
 
@@ -120,16 +107,16 @@ contract ChonkMachine {
 
         burnAccount = 0x000000000000000000000000000000000000dEaD;
         administrator = _administrator;
-
         owner = _owner;
+        manager = msg.sender;
         artistAccount = _owner;
         teamAccount = _teamAccount;
         liquidityAccount = _liquidityAccount;
 
         _staffAccountSet.add(administrator);
 
-        machineOwner = option[0];
-        setupMachineOption(option);
+        _checkMachineOption(option);
+        machineOption = option;
 
         _salt = uint256(keccak256(abi.encodePacked(_nftToken, _currencyToken, block.timestamp))).mod(10000);
     }
@@ -143,23 +130,15 @@ contract ChonkMachine {
         machineDescription = _description;
     }
 
-    //setup Machine Option
-    function setupMachineOption(uint256[8] memory option) public onlyOwner {
+    function _checkMachineOption(uint256[8] memory option) pure private {
         //[Team?, ETH-Spin?, TaiyakiLP %, Chonk Buyback %, Chonk LP %, Team Funds %, Artist Funds%, Burn %] 
-        machineType      = option[1];
         require(option[2].add(option[3]).add(option[4]).add(option[5]).add(option[6]).add(option[7]) <= 100, "Invalid Machine Option");
-        require(option[2] <= 100, "Taiyaki LP rate is too big");
-        forTaiyakiLPRate = option[2];
-        require(option[3] <= 100, "BuyBack rate is too big");
-        forBuybackRate   = option[3];
-        require(option[4] <= 100, "Chonk LP rate is too big");
-        forChonkLPRate   = option[4];
-        require(option[5] <= 100, "Team rate is too big");
-        forTeamRate      = option[5];
-        require(option[6] <= 100, "Artist rate is too big");
-        forArtistRate    = option[6];
-        require(option[7] <= 100, "Burn rate is too big");
-        forBuybackRate   = option[7];
+    }
+
+    //setup Machine Option
+    function setupMachineOption(uint256[8] memory option) public onlyManager {
+        _checkMachineOption(option);
+        machineOption = option;
     }
 
     /**
@@ -222,20 +201,15 @@ contract ChonkMachine {
      */
     function _transferAndBurnToken(uint256 amount) private {
         uint256 totalPaid = 0;
-        uint256[6] memory rates = [forTeamRate, forArtistRate, forBurnRate, forTaiyakiLPRate, forBuybackRate, forChonkLPRate];
-        uint256[6] memory totalAmounts = [totalAmountForTeam, totalAmountForArtist, totalAmountForBurn, totalAmountForTaiyakiLP, totalAmountForBuybackChonk, totalAmountForChonkLP];
-        address[6] memory accounts = [teamAccount, artistAccount, burnAccount, liquidityAccount, liquidityAccount, liquidityAccount];
-        uint256 forTeamAmount = 0;
+        address[6] memory accounts = [liquidityAccount, liquidityAccount, liquidityAccount, teamAccount, artistAccount, burnAccount];
         for(uint i = 0 ; i < 6; i++) {
-            if(rates[i] != 0) {
-                uint256 rateAmount = amount.mul(rates[i]).div(100);
+            if(machineOption[i+2] != 0) {
+                uint256 rateAmount = amount.mul(machineOption[i+2]).div(100);
                 currencyToken.transferFrom(msg.sender, accounts[i], rateAmount);
                 totalAmounts[i] = totalAmounts[i].add(rateAmount);
                 totalPaid = totalPaid.add(rateAmount);
             }
         }
-        
-        // 3. tansfer token remaining to team account.
         uint256 remainingAmount = amount.sub(totalPaid);
         currencyToken.transferFrom(msg.sender, teamAccount, remainingAmount);
     }
@@ -313,13 +287,11 @@ contract ChonkMachine {
 
     function unlockMachine() public onlyOwner {   
         maintaining = false;
-
         emit MachineLocked(maintaining);
     }
 
     function lockMachine() public onlyOwner {
         maintaining = true;
-        
         emit MachineLocked(maintaining);
     }
 
@@ -357,7 +329,7 @@ contract ChonkMachine {
         owner = newOwner;
     }
 
-    function changeArtisAccount(address account) public onlyOwner {
+    function changeArtistAccount(address account) public onlyOwner {
         require(account != address(0), "New artist is zero address");
         artistAccount = account;
     }
@@ -437,6 +409,11 @@ contract ChonkMachine {
 
     modifier onlyAdministrator() {
         require(address(msg.sender) == administrator, "Only for administrator.");
+        _;
+    }
+
+    modifier onlyManager() {
+        require(address(msg.sender) == manager, "Only for manager.");
         _;
     }
 

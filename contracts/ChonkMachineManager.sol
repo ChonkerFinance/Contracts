@@ -69,7 +69,7 @@ contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
         external nonReentrant  returns(uint256) {
 
         require(hasRole(STAFF_ROLE, msg.sender), "Must be staff to add machine");
-        require(hasRole(ARTIST_ROLE, _owner), "Machine Owner must be artist");
+        require(hasRole(ARTIST_ROLE, _owner) || hasRole(STAFF_ROLE, _owner), "Machine Owner must be artist or staff");
         require(_option_idx < options.length, "Invalid option idx");
 
         uint256[8] memory option = getOption(_option_idx);
@@ -167,6 +167,13 @@ contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
                 abi.encodeWithSignature("changeTeamAccount(address)", account)
             );
         }
+    }
+
+    function changeMachineOption(address m_address, uint256 _option_idx) public nonReentrant {
+        ChonkMachine machine = machines[m_address];
+        require(machine.isStaffAccount(msg.sender), "only for staff account");
+        
+        machine.setupMachineOption(options[_option_idx]);
     }
 
     function changeLiquidityAccount(address account) public nonReentrant onlyOwner {
