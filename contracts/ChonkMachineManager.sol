@@ -17,6 +17,7 @@ contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
     address public teamAccount;
     address public liquidityAccount;
     address public nftAddress;
+    address public nftManager;
     address public taiyakiAddress;
     address public wethAddress;
 
@@ -29,13 +30,12 @@ contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
     address[] public machineIndices;
 
     event MachineAdded(uint256 id, address addr, string name, string description, uint256 option_idx, uint256 price, address owner);
-    event MachineOptionUpdated(address addr, uint256 option_id);
-    event MachineDeleted(address addr);
     
-    constructor(address _team, address _liquidityAccount, address _nft, address _taiyaki, address _weth) public {
+    constructor(address _team, address _liquidityAccount, address _nft, address _nftManager, address _taiyaki, address _weth) public {
         teamAccount = _team;
         liquidityAccount = _liquidityAccount;
         nftAddress = _nft;
+        nftManager = _nftManager;
         taiyakiAddress = _taiyaki;
         wethAddress = _weth;
         lastMachineIdx = 0;
@@ -78,15 +78,15 @@ contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
             lastMachineIdx,
             _title,
             _description,
-            IChonkNFT(nftAddress),
-            IERC20(option[1] == 1 ? wethAddress : taiyakiAddress),
             _price,
-            option,
             _owner,
             owner(),
             teamAccount,
             liquidityAccount
         );
+
+        m.setupMachineOption(_option_idx, option);
+        m.setupTokenAddresses(nftAddress, nftManager, (option[1] == 1 ? wethAddress : taiyakiAddress));
         
         machines[address(m)] = m;
         machineIndices.push(address(m));
@@ -96,39 +96,11 @@ contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
         lastMachineIdx ++;
     }
 
-    function deleteMachine(address m_address) external nonReentrant  onlyOwner {
-        require(machines[m_address].owner() != address(0x0),  "invalid machine address");
-        
-        uint machineLength = machineIndices.length;
-        ChonkMachine machine = machines[m_address];
-        require(machine.cleanMachine(), "failed to clean machine");
-        
-        uint indexToBeDeleted;
-        for (uint i=0; i<machineLength; i++) {
-            if (machineIndices[i] == m_address) {
-                indexToBeDeleted = i;
-                break;
-            }
-        }
-
-        if (indexToBeDeleted != machineLength-1) {
-            machineIndices[indexToBeDeleted] = machineIndices[machineLength-1];
-        }
-
-        delete machines[m_address];
-        machineIndices.pop();
-
-        emit MachineDeleted(m_address);
-    }
-
-
     function addStaffAccount(address account) public nonReentrant onlyOwner {
         require(account != address(0), "staff is zero address");
         grantRole(STAFF_ROLE, account);
         for(uint256 i = 0; i < machineIndices.length; i++) {
-            (bool success, ) = machineIndices[i].delegatecall(
-                abi.encodeWithSignature("addStaffAccount(address)", account)
-            );
+            ChonkMachine(machineIndices[i]).addStaffAccount(account);
         }
     }
 
@@ -136,9 +108,7 @@ contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
         require(account != address(0), "staff is zero address");
         revokeRole(STAFF_ROLE, account);
         for(uint256 i = 0; i < machineIndices.length; i++) {
-            (bool success, ) = machineIndices[i].delegatecall(
-                abi.encodeWithSignature("removeStaffAccount(address)", account)
-            );
+            ChonkMachine(machineIndices[i]).removeStaffAccount(account);
         }
     }
 
@@ -149,9 +119,7 @@ contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
         grantRole(DEFAULT_ADMIN_ROLE, account);
 
         for(uint256 i = 0; i < machineIndices.length; i++) {
-            (bool success, ) = machineIndices[i].delegatecall(
-                abi.encodeWithSignature("transferAdministrator(address)", account)
-            );
+            ChonkMachine(machineIndices[i]).transferAdministrator(account);
         }
         revokeRole(STAFF_ROLE, msg.sender);
         revokeRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -163,9 +131,7 @@ contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
         require(account != address(0), "New team account is zero address");
 
         for(uint256 i = 0; i < machineIndices.length; i++) {
-            (bool success, ) = machineIndices[i].delegatecall(
-                abi.encodeWithSignature("changeTeamAccount(address)", account)
-            );
+            ChonkMachine(machineIndices[i]).changeTeamAccount(account);
         }
     }
 
@@ -173,16 +139,14 @@ contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
         ChonkMachine machine = machines[m_address];
         require(machine.isStaffAccount(msg.sender), "only for staff account");
         
-        machine.setupMachineOption(options[_option_idx]);
+        machine.setupMachineOption(_option_idx, options[_option_idx]);
     }
 
     function changeLiquidityAccount(address account) public nonReentrant onlyOwner {
         require(account != address(0), "New liquidity account is zero address");
 
         for(uint256 i = 0; i < machineIndices.length; i++) {
-            (bool success, ) = machineIndices[i].delegatecall(
-                abi.encodeWithSignature("changeLiquidityAccount(address)", account)
-            );
+            ChonkMachine(machineIndices[i]).changeLiquidityAccount(account);
         }
     }
 }

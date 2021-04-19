@@ -4,7 +4,7 @@ pragma solidity ^0.6.2;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
-
+import "@openzeppelin/contracts/token/ERC1155/ERC1155Holder.sol";
 
 interface IChonkNFT {
   function safeTransferFrom(address from,
@@ -16,7 +16,11 @@ interface IChonkNFT {
   function mint(address to, uint256 id, uint256 amount) external;
 }
 
-contract ChonkMachine {
+interface INFTManager {
+  function mint(address to, uint256 tokenId, uint256 quantity) external;
+}
+
+contract ChonkMachine is ERC1155Holder {
     using SafeMath for uint256;
     using EnumerableSet for EnumerableSet.UintSet;
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -43,6 +47,7 @@ contract ChonkMachine {
     string public machineDescription;
     string public machineUri;
     // [Team?, ETH-Spin?, TaiyakiLP %, Chonk Buyback %, Chonk LP %, Team Funds %, Artist Funds%, Burn %]
+    uint256 public machineOptionIdx;
     uint256[8] public machineOption;
     bool public maintaining = true;
     bool public banned = false;
@@ -76,6 +81,7 @@ contract ChonkMachine {
     // Currency of the game machine, like Taiyaki, WETH
     IERC20 public currencyToken;
     IChonkNFT public nftToken;
+    INFTManager public nftManager;
 
     uint256 public playOncePrice;
     
@@ -88,18 +94,13 @@ contract ChonkMachine {
     constructor(uint256 _machineId, //machine id
                 string memory _machineTitle, // machine title.
                 string memory _machineDescription, // machine title.
-                IChonkNFT _nftToken, // nft token address
-                IERC20 _currencyToken, // currency address
                 uint256 _price,
-                uint256[8] memory option,  // Machine Option
                 address _owner,
                 address _administrator,
                 address _teamAccount,
                 address _liquidityAccount
                 ) public {
         machineId = _machineId;
-        nftToken = _nftToken;
-        currencyToken = _currencyToken;
         playOncePrice = _price;
     
         _setupMachineTitle(_machineTitle);
@@ -108,17 +109,12 @@ contract ChonkMachine {
         burnAccount = 0x000000000000000000000000000000000000dEaD;
         administrator = _administrator;
         owner = _owner;
-        manager = msg.sender;
         artistAccount = _owner;
+        manager = msg.sender;
         teamAccount = _teamAccount;
         liquidityAccount = _liquidityAccount;
 
         _staffAccountSet.add(administrator);
-
-        _checkMachineOption(option);
-        machineOption = option;
-
-        _salt = uint256(keccak256(abi.encodePacked(_nftToken, _currencyToken, block.timestamp))).mod(10000);
     }
 
     //setup title
@@ -136,9 +132,17 @@ contract ChonkMachine {
     }
 
     //setup Machine Option
-    function setupMachineOption(uint256[8] memory option) public onlyManager {
+    function setupMachineOption(uint256 _option_idx, uint256[8] calldata option) external onlyManager {
         _checkMachineOption(option);
+        machineOptionIdx = _option_idx;
         machineOption = option;
+    }
+
+    function setupTokenAddresses(address _nft, address _nftManager, address _currency) external onlyManager {
+        nftToken = IChonkNFT(_nft);
+        currencyToken = IERC20(_currency);
+        nftManager = INFTManager(_nftManager);
+        _salt = uint256(keccak256(abi.encodePacked(_nft, _currency, block.timestamp))).mod(10000);
     }
 
     /**
@@ -148,7 +152,7 @@ contract ChonkMachine {
      */
     function addCard(uint256 cardId, uint256 amount, bool _mint) public onlyOwner unbanned {
         if(_mint) {
-            nftToken.mint(address(this), cardId, amount);
+            nftManager.mint(address(this), cardId, amount);
         }else {
             require(nftToken.balanceOf(msg.sender, cardId) >= amount, "You don't have enough Cards");
             nftToken.safeTransferFrom(msg.sender, address(this), cardId, amount, "Add Card");
@@ -203,7 +207,7 @@ contract ChonkMachine {
         uint256 totalPaid = 0;
         address[6] memory accounts = [liquidityAccount, liquidityAccount, liquidityAccount, teamAccount, artistAccount, burnAccount];
         for(uint i = 0 ; i < 6; i++) {
-            if(machineOption[i+2] != 0) {
+            if(machineOption[i+2] != 0 && accounts[i] != address(0x0)) {
                 uint256 rateAmount = amount.mul(machineOption[i+2]).div(100);
                 currencyToken.transferFrom(msg.sender, accounts[i], rateAmount);
                 totalAmounts[i] = totalAmounts[i].add(rateAmount);
@@ -298,11 +302,11 @@ contract ChonkMachine {
     // ***************************
     // For Admin Account ***********
     // ***************************
-    function addStaffAccount(address account) public onlyAdministrator {
+    function addStaffAccount(address account) public onlyManager {
         _staffAccountSet.add(account);
     }
 
-    function removeStaffAccount(address account) public onlyAdministrator {
+    function removeStaffAccount(address account) public onlyManager {
         _staffAccountSet.remove(account);
     }
 
@@ -318,7 +322,7 @@ contract ChonkMachine {
         return _staffAccountSet.length();
     }
 
-    function transferAdministrator(address account) public onlyAdministrator {
+    function transferAdministrator(address account) public onlyManager {
         require(account != address(0), "Ownable: new owner is zero address");
         administrator = account;
     }
@@ -329,17 +333,22 @@ contract ChonkMachine {
         owner = newOwner;
     }
 
+    function removeOwnership() public onlyAdministrator {
+        owner = address(0x0);
+        artistAccount = address(0x0);
+    }
+
     function changeArtistAccount(address account) public onlyOwner {
         require(account != address(0), "New artist is zero address");
         artistAccount = account;
     }
 
-    function changeTeamAccount(address account) public onlyAdministrator {
+    function changeTeamAccount(address account) public onlyManager {
         require(account != address(0), "New team account is zero address");
         teamAccount = account;
     }
 
-    function changeLiquidityAccount(address account) public onlyAdministrator {
+    function changeLiquidityAccount(address account) public onlyManager {
         require(account != address(0), "New liquidity account is zero address");
         liquidityAccount = account;
     }

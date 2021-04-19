@@ -24,7 +24,7 @@ async function main () {
   let taiyakiTokenAddress = "0x74EC08059497BD01A6516Ac9D0218bc658d66e99";
   let taiyakiLPTokenAddress = "0xfbA2d9bB0Ce8dccF6Be68d63C303DAc7fc82fE39";
   let NFTTokenAddress = "0x645B5be3911fAb09308598fE591962910185B84d";
-
+  let NFTManagerAddress = "0xe7b560e99efAd2e585CFB171d2673a264d4cAEf3";
   /**
    *  Taiyaki LP Token Deploy
    */
@@ -178,6 +178,7 @@ async function main () {
     await manager.deployed()
   
     console.log('NFT Manager  deployed to:', manager.address)
+    NFTManagerAddress = manager.address;
     await sleep(60);
     await hre.run("verify:verify", {
       address: manager.address,
@@ -208,7 +209,7 @@ async function main () {
       signer: (await ethers.getSigners())[0]
     })
   
-    const manager = await ChonkMachineManager.deploy(teamAccount, liquidityAccount, NFTTokenAddress, taiyakiTokenAddress, wethAddress)
+    const manager = await ChonkMachineManager.deploy(teamAccount, liquidityAccount, NFTTokenAddress,NFTManagerAddress, taiyakiTokenAddress, wethAddress)
     await manager.deployed()
   
     console.log('ChonkMachineManager  deployed to:', manager.address)
@@ -217,7 +218,7 @@ async function main () {
       address: manager.address,
       contract: "contracts/ChonkMachineManager.sol:ChonkMachineManager",
       constructorArguments: [
-        teamAccount, liquidityAccount, NFTTokenAddress, taiyakiTokenAddress, wethAddress
+        teamAccount, liquidityAccount, NFTTokenAddress,NFTManagerAddress, taiyakiTokenAddress, wethAddress
       ],
     })
   
