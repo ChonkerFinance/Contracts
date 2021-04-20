@@ -10,8 +10,10 @@
     "test": "npm run clean && hardhat test",
     "build_l1": "npm run clean && hardhat compile --network rinkeby",
     "build_l2": "npm run clean && hardhat compile --network optimism",
+    "build_matic": "npm run clean && hardhat compile --network mumbai",
     "deploy_l2": "hardhat run scripts/TAIYAKI.deploy.l2.js --network optimism",
     "deploy_l1": "hardhat run scripts/TAIYAKI.deploy.l1.js --network rinkeby",
+    "deploy_matic": "hardhat run scripts/TAIYAKI.deploy.matic.js --network mumbai",
     "lint": "prettier-standard --format",
     "clean": "rimraf cache artifacts"
   },

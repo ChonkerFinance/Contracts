@@ -17,6 +17,10 @@ module.exports = {
     rinkeby: {
       url: process.env.L1_NODE_URL,
       accounts: [process.env.PRIVATE_KEY]
+    },
+    mumbai: {
+      url: process.env.MUMBAI_NODE_URL,
+      accounts: [process.env.PRIVATE_KEY]
     }
   },
   solidity: {
