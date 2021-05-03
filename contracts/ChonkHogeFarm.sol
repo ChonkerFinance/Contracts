@@ -18,14 +18,28 @@ contract ChonkHogeFarm is Ownable, ReentrancyGuard {
 
   constructor(address _chonk_hoge) public {
     ChonkHogeAddress = _chonk_hoge;
+    unstakingFee = 1;
+    rewardPerWeek = 10;
+
+    feeAddress = 0x98B48C1B9654C0bda3cB7A1561b930E754A6641F;
   }
 
   address public ChonkHogeAddress;
   address public NFTAddress;
+  address public feeAddress;
+
+  /* Penelty Fee for unstaking (%) */
+  uint256 public unstakingFee;
+  uint256 public rewardPerWeek;
 
   function setNFTAddress(address _address) public onlyOwner {
     NFTAddress = _address;
   }
+
+  function setFeeAddress(address _address) public onlyOwner {
+    feeAddress = _address;
+  }
+
 
   mapping(address => uint256) private lpBalance;
   mapping(address => uint256) public lastUpdateTime;
@@ -34,6 +48,17 @@ contract ChonkHogeFarm is Ownable, ReentrancyGuard {
   event Staked(address indexed user, uint256 amount);
   event Withdrawn(address indexed user, uint256 amount);
 
+
+  function setRewardPerWeek(uint256 _reward) external onlyOwner {
+      rewardPerWeek = _reward;
+  }
+
+  function setUnstakingFee(uint256 _fee) external onlyOwner {
+      require(_fee < 100, "Unstaking fee is too big");
+
+      unstakingFee = _fee;
+  }
+  
   modifier updateReward(address account) {
     if (account != address(0)) {
       points[account] = earned(account);
@@ -50,7 +75,8 @@ contract ChonkHogeFarm is Ownable, ReentrancyGuard {
   */
   function earned(address account) public view returns (uint256) {
     uint256 blockTime = block.timestamp;
-    return points[account].add(blockTime.sub(lastUpdateTime[account]).mul(1e18).div(60480).mul(balanceOf(account).div(1e18)));
+    uint256 amount = blockTime.sub(lastUpdateTime[account]).mul(balanceOf(account)).mul(rewardPerWeek).div(60480000);
+    return points[account].add(amount);
   }
 
   /*
@@ -66,8 +92,12 @@ contract ChonkHogeFarm is Ownable, ReentrancyGuard {
   function withdraw(uint256 amount) public updateReward(_msgSender()) nonReentrant {
     require(amount > 0, "Cannot withdraw 0");
     require(amount <= balanceOf(_msgSender()), "Cannot withdraw more than balance");
-    IERC20(ChonkHogeAddress).transfer(_msgSender(), amount);
+
+    uint256 fee = amount.mul(unstakingFee).div(100);
+    require(IERC20(ChonkHogeAddress).transfer(feeAddress, fee), "Transfer unstaking fee failed");
+    require(IERC20(ChonkHogeAddress).transfer(_msgSender(), amount.sub(fee)), "Transfer failed");
     lpBalance[_msgSender()] = lpBalance[_msgSender()].sub(amount);
+   
     emit Withdrawn(_msgSender(), amount);
   }
 
@@ -76,9 +106,13 @@ contract ChonkHogeFarm is Ownable, ReentrancyGuard {
   }
 
   mapping(uint256 => uint256) public redeemCost;
+
+  event ListCard(uint256 id, uint256 cost);
   
   function setRedeemCost(uint256 _id, uint256 _cost) public onlyOwner {
     redeemCost[_id] = _cost;
+
+    emit ListCard(_id, _cost);
   }
 
     

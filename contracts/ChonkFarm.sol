@@ -632,8 +632,12 @@ contract ChonkFarm is Ownable, ReentrancyGuard {
 
   mapping(uint256 => uint256) public redeemCost;
   
+  event ListCard(uint256 id, uint256 cost);
+  
   function setRedeemCost(uint256 _id, uint256 _cost) public onlyOwner {
     redeemCost[_id] = _cost;
+
+    emit ListCard(_id, _cost);
   }
 
     
