@@ -166,7 +166,6 @@ contract ChonkClub is Ownable, ReentrancyGuard {
         Holder memory holder = holders[_msgSender()];
         require(holder.valid, "Invalid holder");
         require(amount <= holder.taiyakiRewards, "Cannot withdraw more than balance");
-
         ITaiyaki(TaiyakiAddress).mint(_msgSender(), amount);
         holder.taiyakiRewards = holder.taiyakiRewards.sub(amount);
         emit ClaimedTaiyaki(_msgSender(), amount);

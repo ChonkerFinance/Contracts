@@ -5,6 +5,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract Chonker is ERC20("CHONK", "CHONK") {
   constructor() public {
-        _mint(0x6aE13452D22b4030A7360a86166Ee2143Cd98078, 28000000000000000000000);
+        _mint(0xc2A79DdAF7e95C141C20aa1B10F3411540562FF7, 28000000000000000000000);
   }
 }
