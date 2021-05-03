@@ -50,13 +50,13 @@ contract ChonkHogeFarm is Ownable, ReentrancyGuard {
   */
   function earned(address account) public view returns (uint256) {
     uint256 blockTime = block.timestamp;
-    return points[account].add(blockTime.sub(lastUpdateTime[account]).mul(1e18).div(5760).mul(balanceOf(account).div(1e18)));
+    return points[account].add(blockTime.sub(lastUpdateTime[account]).mul(1e18).div(60480).mul(balanceOf(account).div(1e18)));
   }
 
   /*
   */
   function stake(uint256 amount) public updateReward(_msgSender()) nonReentrant {
-    require(amount.add(balanceOf(_msgSender())) >= 1e18, "Cannot stake less than 1 Hoge/CHONK");
+    require(amount.add(balanceOf(_msgSender())) >= 1e17, "Cannot stake less than 0.1 Hoge/CHONK");
     require(amount.add(balanceOf(_msgSender())) <= 1e19, "Cannot stake more than 10 Hoge/CHONK");
     lpBalance[_msgSender()] = lpBalance[_msgSender()].add(amount);
     IERC20(ChonkHogeAddress).transferFrom(_msgSender(), address(this), amount);
