@@ -251,7 +251,7 @@ async function main () {
       address: club.address,
       contract: "contracts/ChonkClub.sol:ChonkClub",
       constructorArguments: [
-        chonkToken, taiyakiTokenAddress, NFTTokenAddress
+        chonkTokenAddress, taiyakiTokenAddress, NFTTokenAddress
       ],
     })
   
