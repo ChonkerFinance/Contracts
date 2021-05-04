@@ -18,9 +18,11 @@ async function main () {
     taiyakiLPPool: false,
     taiyakiFishSwap: false,
     NFTManager: false,
-    ChonkMachineManager: true,
+    ChonkMachineManager: false,
+    ChonkClub: true
   }
 
+  let chonkTokenAddress = "0x43357b329c9F7E6E7ae494889f88Ad7ffFdc8F00";
   let taiyakiTokenAddress = "0x74EC08059497BD01A6516Ac9D0218bc658d66e99";
   let taiyakiLPTokenAddress = "0xfbA2d9bB0Ce8dccF6Be68d63C303DAc7fc82fE39";
   let NFTTokenAddress = "0x645B5be3911fAb09308598fE591962910185B84d";
@@ -223,6 +225,37 @@ async function main () {
     })
   
     console.log('ChonkMachineManager contract verified')
+  }
+
+
+  /**
+   *  ChonkClub Contract
+   *  should set Team, ChonkNFT, Taiyaki contract address
+   *  
+   *  
+   */
+   if(deployFlags.ChonkClub) {
+    console.log(' --------------------------------------- ')
+    console.log('Deploying ChonkClub contract')
+
+    const ChonkClub = await ethers.getContractFactory('ChonkClub', {
+      signer: (await ethers.getSigners())[0]
+    })
+  
+    const club = await ChonkClub.deploy(chonkTokenAddress, taiyakiTokenAddress, NFTTokenAddress)
+    await club.deployed()
+  
+    console.log('ChonkClub  deployed to:', club.address)
+    await sleep(60);
+    await hre.run("verify:verify", {
+      address: club.address,
+      contract: "contracts/ChonkClub.sol:ChonkClub",
+      constructorArguments: [
+        chonkToken, taiyakiTokenAddress, NFTTokenAddress
+      ],
+    })
+  
+    console.log('ChonkClub contract verified')
   }
 
 }
