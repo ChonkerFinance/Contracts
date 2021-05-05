@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-
+import "@openzeppelin/contracts/token/ERC1155/ERC1155Holder.sol";
 
 interface IChonkNFT {
     function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes calldata data) external;
@@ -20,7 +20,7 @@ interface ITaiyaki {
     function mint(address to, uint256 amount) external;
 }
 
-contract ChonkClub is Ownable, ReentrancyGuard {
+contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
     using SafeMath for uint256;
 
     uint256 constant public GYOZA_PER_MONTH = 100 * 1e18;
