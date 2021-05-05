@@ -9,6 +9,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 
 
 interface IChonkNFT {
+    function safeTransferFrom(address from, address to, uint256 id, uint256 amount, bytes calldata data) external;
     function mint(address to, uint256 id, uint256 amount) external;
 }
 
@@ -23,11 +24,13 @@ contract ChonkClub is Ownable, ReentrancyGuard {
     using SafeMath for uint256;
 
     uint256 constant public GYOZA_PER_MONTH = 100 * 1e18;
+    uint256 constant public REWARD_CHAN_PER_MONTH = 5 * 1e17;
     uint256 constant public SECONDS_PER_MONTH = 30 * 24 * 3600;
 
     address public ChonkAddress;
     address public TaiyakiAddress;
     address public NFTAddress;
+    uint256 public chonkChainId;
 
     struct Tier {
         uint256 id;
@@ -47,6 +50,8 @@ contract ChonkClub is Ownable, ReentrancyGuard {
         uint256 taiyakiUpdatedAt;
         uint256 gyozaUpdatedAt;
         uint256 gyozaRedeemAt;
+        bool bChonkChainStaked;
+        uint256 chonkChainUpdatedAt;
         bool valid;
     }
     mapping(address => Holder) public holders;
@@ -60,6 +65,7 @@ contract ChonkClub is Ownable, ReentrancyGuard {
         ChonkAddress = _chonk;
         TaiyakiAddress = _taiyaki;
         NFTAddress = _nft;
+        chonkChainId = 1;
 
         _changeTier(1, 50  * 1e18, 1e18, 0);
         _changeTier(2, 100 * 1e18, 2e18, 0);
@@ -69,6 +75,10 @@ contract ChonkClub is Ownable, ReentrancyGuard {
 
     function setNFTAddress(address _address) public onlyOwner {
         NFTAddress = _address;
+    }
+
+    function setChonkChanId(uint256 _card) public onlyOwner {
+        chonkChainId = _card;
     }
 
     function _changeTier(uint256 id, uint256 chonk, uint256 taiyakiPerMonth, uint256 card) internal returns(bool){
@@ -103,10 +113,11 @@ contract ChonkClub is Ownable, ReentrancyGuard {
 
     modifier updateReward(address account) {
         if (account != address(0)) {
-            holders[account].taiyakiRewards = earnedTaiyaki(account);
+            holders[account].taiyakiRewards = earnedTaiyaki(account).add(earnedTaiyakiFromChonkChain(account));
             holders[account].gyozaRewards   = earnedGyoza(account);
             holders[account].taiyakiUpdatedAt = block.timestamp;
             holders[account].gyozaUpdatedAt   = block.timestamp;
+            holders[account].chonkChainUpdatedAt = block.timestamp;
         }
         _;
     }
@@ -130,6 +141,20 @@ contract ChonkClub is Ownable, ReentrancyGuard {
     }
 
     /*
+        Calculate earned Taiyaki amount from staking ChonkChan
+    */
+    function earnedTaiyakiFromChonkChain(address account) public view returns (uint256) {
+        uint256 blockTime = block.timestamp;
+        Holder memory holder = holders[account];
+        
+        if(holder.valid != true) return 0;
+        if(holder.bChonkChainStaked != true) return 0;
+
+        uint256 rewards = blockTime.sub(holder.chonkChainUpdatedAt).mul(REWARD_CHAN_PER_MONTH).div(SECONDS_PER_MONTH);
+        return rewards;
+    }
+
+    /*
         Calculate earned Gyoza amount 
     */
     function earnedGyoza(address account) public view returns (uint256) {
@@ -147,18 +172,23 @@ contract ChonkClub is Ownable, ReentrancyGuard {
     */
     function stake(uint256 tier_id) public updateReward(_msgSender()) nonReentrant {
         require(tiers[tier_id].chonk > 0, "Invalid Tier id");
-        require(holders[_msgSender()].valid, "already staked");
+        require(holders[_msgSender()].valid == false, "already staked");
         require(IERC20(ChonkAddress).transferFrom(_msgSender(), address(this), tiers[tier_id].chonk), "failed to transfer Chonk");
 
         holders[_msgSender()].tier_id = tier_id;
         holders[_msgSender()].taiyakiRewards = 0;
         holders[_msgSender()].gyozaRewards = 0;
-        holders[_msgSender()].taiyakiUpdatedAt = block.timestamp;
-        holders[_msgSender()].gyozaUpdatedAt = block.timestamp;
-        holders[_msgSender()].gyozaRedeemAt = block.timestamp;
         holders[_msgSender()].valid = true;
 
         emit Staked(_msgSender(), tier_id);
+    }
+
+    function stakeChonkChan() public updateReward(_msgSender()) nonReentrant {
+        require(holders[_msgSender()].valid, "Invalid Holder");
+        require(holders[_msgSender()].bChonkChainStaked == false, "Chonk Chan already staked");
+        IChonkNFT(NFTAddress).safeTransferFrom(_msgSender(), address(this), chonkChainId, 1, "Stake");
+
+        holders[_msgSender()].bChonkChainStaked = true;
     }
 
     function claimTaiyaki(uint256 amount) public updateReward(_msgSender()) nonReentrant {
@@ -186,6 +216,14 @@ contract ChonkClub is Ownable, ReentrancyGuard {
         emit RedeemedNFT(_msgSender(), tier.cardId);
     }
 
+    function unstakeChonkChan() public updateReward(_msgSender()) nonReentrant {
+        Holder memory holder = holders[_msgSender()];
+        require(holder.bChonkChainStaked, "not staked");
+        IChonkNFT(NFTAddress).safeTransferFrom(address(this), _msgSender(), chonkChainId, 1, "UnStake");
+
+        holder.bChonkChainStaked = false;
+    }
+
     function exit() external {
         Holder memory holder = holders[_msgSender()];
         require(holder.valid, "Invalid holder");
@@ -194,7 +232,11 @@ contract ChonkClub is Ownable, ReentrancyGuard {
 
         claimTaiyaki(holder.taiyakiRewards);
         IERC20(ChonkAddress).transfer(_msgSender(), tier.chonk);
-
+        if(holder.bChonkChainStaked) {
+            IChonkNFT(NFTAddress).safeTransferFrom(address(this), _msgSender(), chonkChainId, 1, "UnStake");
+        }
+        holder.tier_id = 0;
         holder.valid = false;
+        holder.bChonkChainStaked = false;
     }
 }

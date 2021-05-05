@@ -231,7 +231,7 @@ async function main () {
   /**
    *  ChonkClub Contract
    *  should set Team, ChonkNFT, Taiyaki contract address
-   *  
+   *  should minter of Taiyaki Token
    *  
    */
    if(deployFlags.ChonkClub) {
