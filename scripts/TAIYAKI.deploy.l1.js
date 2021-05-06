@@ -232,7 +232,7 @@ async function main () {
    *  ChonkClub Contract
    *  should set Team, ChonkNFT, Taiyaki contract address
    *  should minter of Taiyaki Token
-   *  
+   *  should minter and default admin of NFT token
    */
    if(deployFlags.ChonkClub) {
     console.log(' --------------------------------------- ')

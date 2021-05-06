@@ -178,6 +178,7 @@ contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
         holders[_msgSender()].tier_id = tier_id;
         holders[_msgSender()].taiyakiRewards = 0;
         holders[_msgSender()].gyozaRewards = 0;
+        holders[_msgSender()].gyozaRedeemAt = block.timestamp;
         holders[_msgSender()].valid = true;
 
         emit Staked(_msgSender(), tier_id);
@@ -193,7 +194,7 @@ contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
 
     function claimTaiyaki(uint256 amount) public updateReward(_msgSender()) nonReentrant {
         require(amount > 0, "Invalid Amount");
-        Holder memory holder = holders[_msgSender()];
+        Holder storage holder = holders[_msgSender()];
         require(holder.valid, "Invalid holder");
         require(amount <= holder.taiyakiRewards, "Cannot withdraw more than balance");
         ITaiyaki(TaiyakiAddress).mint(_msgSender(), amount);
@@ -202,7 +203,7 @@ contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
     }
 
     function redeemMonthlyNFT() public updateReward(_msgSender()) nonReentrant {
-        Holder memory holder = holders[_msgSender()];
+        Holder storage holder = holders[_msgSender()];
         require(holder.valid, "Invalid holder");
         require(GYOZA_PER_MONTH <= holder.gyozaRewards, "Cannot withdraw more than balance");
         require(uint256(block.timestamp).sub(holder.gyozaRedeemAt) >= SECONDS_PER_MONTH, "Can redeem NFT at once every month");
@@ -217,7 +218,7 @@ contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
     }
 
     function unstakeChonkChan() public updateReward(_msgSender()) nonReentrant {
-        Holder memory holder = holders[_msgSender()];
+        Holder storage holder = holders[_msgSender()];
         require(holder.bChonkChainStaked, "not staked");
         IChonkNFT(NFTAddress).safeTransferFrom(address(this), _msgSender(), chonkChainId, 1, "UnStake");
 
@@ -225,7 +226,7 @@ contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
     }
 
     function exit() external {
-        Holder memory holder = holders[_msgSender()];
+        Holder storage holder = holders[_msgSender()];
         require(holder.valid, "Invalid holder");
 
         Tier memory tier = tiers[holder.tier_id];
