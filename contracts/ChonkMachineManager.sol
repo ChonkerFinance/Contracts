@@ -127,6 +127,12 @@ contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
         transferOwnership(account);
     }
 
+    function changeTokenAddress(address _nft, address _nftManager, address _taiyaki) public nonReentrant onlyOwner {
+        nftAddress = _nft;
+        nftManager = _nftManager;
+        taiyakiAddress = _taiyaki;
+    }
+
     function changeTeamAccount(address account) public nonReentrant onlyOwner {
         require(account != address(0), "New team account is zero address");
 

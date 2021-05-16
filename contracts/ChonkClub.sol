@@ -81,6 +81,8 @@ contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
         NFTAddress = _nft;
         chonkChainId = 1;
 
+        rstakeRewardPerWeek = 100; // 10%
+
         _changeTier(1, 50  * 1e18, 1e18, 0);
         _changeTier(2, 100 * 1e18, 2e18, 0);
         _changeTier(3, 150 * 1e18, 3e18, 0);
@@ -197,8 +199,6 @@ contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
     function earnedRStake(address account) public view returns (uint256) {
         uint256 blockTime = block.timestamp;
         Holder memory holder = holders[account];
-        
-        if(holder.valid != true) return 0;
 
         uint256 rewards = (blockTime.sub(holder.rstakeUpdatedAt)).mul(holder.regularStaked).mul(rstakeRewardPerWeek).div(PERCENTS_DIVIDER.mul(604800));
         return holder.rstakeRewards.add(rewards);
@@ -307,7 +307,7 @@ contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
         Holder storage holder = holders[_msgSender()];
         require(amount <= holder.rstakeRewards, "Cannot withdraw more than balance");
         ITaiyaki(TaiyakiAddress).mint(_msgSender(), amount);
-        holder.rstakeRewards = holder.taiyakiRewards.sub(amount);
+        holder.rstakeRewards = holder.rstakeRewards.sub(amount);
         emit ClaimedTaiyaki(_msgSender(), amount);
     }
 
