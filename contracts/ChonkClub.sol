@@ -26,6 +26,7 @@ contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
     uint256 constant public GYOZA_PER_MONTH = 100 * 1e18;
     uint256 constant public REWARD_CHAN_PER_MONTH = 5 * 1e17;
     uint256 constant public SECONDS_PER_MONTH = 30 * 24 * 3600;
+    uint256 constant public PERCENTS_DIVIDER = 1000;
 
     address public ChonkAddress;
     address public TaiyakiAddress;
@@ -52,14 +53,27 @@ contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
         uint256 gyozaRedeemAt;
         bool bChonkChainStaked;
         uint256 chonkChainUpdatedAt;
+
+        uint256 regularStaked;
+        uint256 rstakeUpdatedAt;
+        uint256 rstakeRewards;  
         bool valid;
     }
     mapping(address => Holder) public holders;
 
+    /**
+        Regular Staking
+     */
+    uint256 public rstakeRewardPerWeek;   // Percentage - Max 1000
+
+
+
     event TierChanged(uint256 id, uint256 chonk, uint256 taiyakiPerMonth, uint256 cardId);
     event Staked(address indexed user, uint256 tier_id);
+    event RegularStaked(address indexed user, uint256 amount);
     event ClaimedTaiyaki(address indexed user, uint256 amount);
     event RedeemedNFT(address indexed user, uint256 cardId);
+    event RegularWithdrawn(address indexed user, uint256 amount);
 
     constructor(address _chonk, address _taiyaki, address _nft) public {
         ChonkAddress = _chonk;
@@ -81,6 +95,10 @@ contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
         chonkChainId = _card;
     }
 
+    function setRewardPerWeek(uint256 _reward) external onlyOwner {
+        rstakeRewardPerWeek = _reward;
+    }
+
     function _changeTier(uint256 id, uint256 chonk, uint256 taiyakiPerMonth, uint256 card) internal returns(bool){
         tiers[id].id = id;
         tiers[id].chonk = chonk;
@@ -89,11 +107,6 @@ contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
 
         emit TierChanged(id, chonk, taiyakiPerMonth, card);
         return true;
-    }
-
-    function addTier(uint256 chonk, uint256 taiyakiPerMonth, uint256 card) public onlyOwner {
-        currentTierId = currentTierId.add(1);
-        _changeTier(currentTierId, chonk, taiyakiPerMonth, card);
     }
 
     function changeTier(uint256 tier_id, uint256 chonk, uint256 taiyakiPerMonth, uint256 card) public onlyOwner {
@@ -115,9 +128,19 @@ contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
         if (account != address(0)) {
             holders[account].taiyakiRewards = earnedTaiyaki(account).add(earnedTaiyakiFromChonkChain(account));
             holders[account].gyozaRewards   = earnedGyoza(account);
+            holders[account].rstakeRewards  = earnedRStake(account);
             holders[account].taiyakiUpdatedAt = block.timestamp;
             holders[account].gyozaUpdatedAt   = block.timestamp;
             holders[account].chonkChainUpdatedAt = block.timestamp;
+            holders[account].rstakeUpdatedAt = block.timestamp;
+        }
+        _;
+    }
+
+    modifier updateRStakeReward(address account) {
+        if (account != address(0)) {
+            holders[account].rstakeRewards  = earnedRStake(account);
+            holders[account].rstakeUpdatedAt = block.timestamp;
         }
         _;
     }
@@ -165,6 +188,20 @@ contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
 
         uint256 rewards = blockTime.sub(holder.gyozaUpdatedAt).mul(GYOZA_PER_MONTH).div(SECONDS_PER_MONTH);
         return holder.gyozaRewards.add(rewards);
+    }
+
+
+    /*
+        Calculate earned RStake Reward 
+    */
+    function earnedRStake(address account) public view returns (uint256) {
+        uint256 blockTime = block.timestamp;
+        Holder memory holder = holders[account];
+        
+        if(holder.valid != true) return 0;
+
+        uint256 rewards = (blockTime.sub(holder.rstakeUpdatedAt)).mul(holder.regularStaked).mul(rstakeRewardPerWeek).div(PERCENTS_DIVIDER.mul(604800));
+        return holder.rstakeRewards.add(rewards);
     }
 
     /*
@@ -239,5 +276,47 @@ contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
         holder.tier_id = 0;
         holder.valid = false;
         holder.bChonkChainStaked = false;
+    }
+
+
+
+    /*
+        Stake Regular- require amount
+    */
+    function rstake(uint256 amount) public updateRStakeReward(_msgSender()) nonReentrant {
+        require(amount.add(holders[_msgSender()].rstakeRewards) >= 1e18, "Cannot stake less than 1 CHONK");
+        require(amount.add(holders[_msgSender()].rstakeRewards) < 50e18, "Cannot stake more than 50 CHONK");
+        
+        require(IERC20(ChonkAddress).transferFrom(_msgSender(), address(this), amount), "failed to transfer Chonk");
+        holders[_msgSender()].regularStaked = holders[_msgSender()].regularStaked.add(amount);
+        emit RegularStaked(_msgSender(), amount);
+    }
+
+    function withdrawRStake(uint256 amount) public updateRStakeReward(_msgSender()) nonReentrant {
+        require(amount > 0, "Cannot withdraw 0");
+        Holder storage holder = holders[_msgSender()];
+        require(amount <= holder.regularStaked, "Cannot withdraw more than balance");
+
+        require(IERC20(ChonkAddress).transfer(_msgSender(), amount), "Transfer failed");
+        holder.regularStaked = holder.regularStaked.sub(amount);
+        emit RegularWithdrawn(_msgSender(), amount);
+    }
+
+    function claimTaiyakiFromRStake(uint256 amount) public updateRStakeReward(_msgSender()) nonReentrant {
+        require(amount > 0, "Invalid Amount");
+        Holder storage holder = holders[_msgSender()];
+        require(amount <= holder.rstakeRewards, "Cannot withdraw more than balance");
+        ITaiyaki(TaiyakiAddress).mint(_msgSender(), amount);
+        holder.rstakeRewards = holder.taiyakiRewards.sub(amount);
+        emit ClaimedTaiyaki(_msgSender(), amount);
+    }
+
+    function exitRStake() external {
+        Holder storage holder = holders[_msgSender()];
+    
+        claimTaiyakiFromRStake(holder.rstakeRewards);
+        IERC20(ChonkAddress).transfer(_msgSender(), holder.regularStaked);
+
+        holder.regularStaked = 0;
     }
 }
