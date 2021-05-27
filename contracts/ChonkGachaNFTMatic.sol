@@ -1751,31 +1751,42 @@ contract ChildMintableERC1155 is
     ContextMixin
 {
     bytes32 public constant DEPOSITOR_ROLE = keccak256("DEPOSITOR_ROLE");
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
-
+    
     uint256 public cards;
     mapping(uint256 => uint256) public totalSupply;
     mapping(uint256 => uint256) public circulatingSupply;
+    mapping(uint256 => address) public creators;
+    mapping(uint256 => mapping(address => bool)) public minters;
+
+    mapping(address => bool) public whitelist;
+
+    bool public onlyWhitelist = true;
 
     event CardAdded(uint256 id, uint256 maxSupply);
-    
+    event Mint(uint256 id, address to, uint256 amount, bytes indexed data, uint256 totalSupply, uint256 circulatingSupply);
+
     constructor(string memory uri_, address childChainManager)
         public
         ERC1155(uri_)
     {
-        _setupContractId("ChildMintableERC1155");
+        _setupContractId("ChonkGachaNFTMatic");
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _setupRole(DEPOSITOR_ROLE, childChainManager);
         _initializeEIP712(uri_);
     }
 
-    function addCard(uint256 maxSupply) public returns (uint256) {
-      require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "Caller is not admin");
-      require(maxSupply > 0, "Maximum supply can not be 0");
-      cards = cards.add(1);
-      totalSupply[cards] = maxSupply;
-      emit CardAdded(cards, maxSupply);
-      return cards;
+    function addCard(uint256 maxSupply) public  returns (uint256) {
+        require(maxSupply > 0, "Maximum supply can not be 0");
+        if (onlyWhitelist) {
+            require(whitelist[msg.sender], "Open to only whitelist.");
+        }
+
+        cards = cards.add(1);
+        totalSupply[cards] = maxSupply;
+        creators[cards] = msg.sender;
+
+        emit CardAdded(cards, maxSupply);
+        return cards;
     }
 
     // This is to support Native meta transactions
@@ -1848,10 +1859,51 @@ contract ChildMintableERC1155 is
         uint256 id,
         uint256 amount,
         bytes calldata data
-    ) external  {
-        require(hasRole(MINTER_ROLE, _msgSender()), "Caller is not a minter");
+    ) external {
+        require(creators[id] == msg.sender || minters[id][msg.sender], "You are not the creator or minter of this NFT.");
+        require(_isTokenIdExist(id), "Token is is not exist.");
         require(circulatingSupply[id].add(amount) <= totalSupply[id], "Total supply reached.");
+
         circulatingSupply[id] = circulatingSupply[id].add(amount);
         _mint(account, id, amount, data);
+
+        emit Mint(id, account, amount, data, totalSupply[id], circulatingSupply[id]);
+    }
+
+    function _isTokenIdExist(uint256 tokenId) private view returns(bool) {
+        return creators[tokenId] != address(0);
+    }
+
+    function addToWhitelist(address account) public only(DEFAULT_ADMIN_ROLE) {
+        whitelist[account] = true;
+    }
+
+    function removeFromWhitelist(address account) public only(DEFAULT_ADMIN_ROLE) {
+        whitelist[account] = false;
+    }
+
+    function openToEveryone() public only(DEFAULT_ADMIN_ROLE) {
+        onlyWhitelist = false;
+    }
+
+    function openOnlyToWhitelist() public only(DEFAULT_ADMIN_ROLE) {
+        onlyWhitelist = true;
+    }
+
+    function addMinter(uint256 id, address account) public onlyCreator(id) {
+        minters[id][account] = true;
+    }
+
+    function removeMinter(uint256 id, address account) public onlyCreator(id) {
+        minters[id][account] = false;
+    }
+
+    function transferCreator(uint256 id, address account) public onlyCreator(id) {
+        creators[id] = account;
+    }
+
+    modifier onlyCreator(uint256 id) {
+        require(msg.sender == creators[id], "only for creator of this NFT.");
+        _;
     }
 }
