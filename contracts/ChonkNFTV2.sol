@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
 
-contract ChonkNFT is ERC1155, AccessControl {
+contract ChonkNFTV2 is ERC1155, AccessControl {
   using SafeMath for uint256;
 
   bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");

@@ -16,10 +16,6 @@ interface IChonkNFT {
   function mint(address to, uint256 id, uint256 amount) external;
 }
 
-interface INFTManager {
-  function mint(address to, uint256 tokenId, uint256 quantity) external;
-}
-
 contract ChonkMachine is ERC1155Holder {
     using SafeMath for uint256;
     using EnumerableSet for EnumerableSet.UintSet;
@@ -81,7 +77,6 @@ contract ChonkMachine is ERC1155Holder {
     // Currency of the game machine, like Taiyaki, WETH
     IERC20 public currencyToken;
     IChonkNFT public nftToken;
-    INFTManager public nftManager;
 
     uint256 public playOncePrice;
     
@@ -138,10 +133,9 @@ contract ChonkMachine is ERC1155Holder {
         machineOption = option;
     }
 
-    function setupTokenAddresses(address _nft, address _nftManager, address _currency) external onlyManager {
+    function setupTokenAddresses(address _nft, address _currency) external onlyManager {
         nftToken = IChonkNFT(_nft);
         currencyToken = IERC20(_currency);
-        nftManager = INFTManager(_nftManager);
         _salt = uint256(keccak256(abi.encodePacked(_nft, _currency, block.timestamp))).mod(10000);
     }
 
@@ -152,7 +146,7 @@ contract ChonkMachine is ERC1155Holder {
      */
     function addCard(uint256 cardId, uint256 amount, bool _mint) public onlyOwner unbanned {
         if(_mint) {
-            nftManager.mint(address(this), cardId, amount);
+            nftToken.mint(address(this), cardId, amount);
         }else {
             require(nftToken.balanceOf(msg.sender, cardId) >= amount, "You don't have enough Cards");
             nftToken.safeTransferFrom(msg.sender, address(this), cardId, amount, "Add Card");

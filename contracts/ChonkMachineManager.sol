@@ -17,7 +17,6 @@ contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
     address public teamAccount;
     address public liquidityAccount;
     address public nftAddress;
-    address public nftManager;
     address public taiyakiAddress;
     address public wethAddress;
 
@@ -31,11 +30,10 @@ contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
 
     event MachineAdded(uint256 id, address addr, string name, string description, uint256 option_idx, uint256 price, address owner);
     
-    constructor(address _team, address _liquidityAccount, address _nft, address _nftManager, address _taiyaki, address _weth) public {
+    constructor(address _team, address _liquidityAccount, address _nft, address _taiyaki, address _weth) public {
         teamAccount = _team;
         liquidityAccount = _liquidityAccount;
         nftAddress = _nft;
-        nftManager = _nftManager;
         taiyakiAddress = _taiyaki;
         wethAddress = _weth;
         lastMachineIdx = 0;
@@ -86,7 +84,7 @@ contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
         );
 
         m.setupMachineOption(_option_idx, option);
-        m.setupTokenAddresses(nftAddress, nftManager, (option[1] == 1 ? wethAddress : taiyakiAddress));
+        m.setupTokenAddresses(nftAddress, (option[1] == 1 ? wethAddress : taiyakiAddress));
         
         machines[address(m)] = m;
         machineIndices.push(address(m));
@@ -127,9 +125,8 @@ contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
         transferOwnership(account);
     }
 
-    function changeTokenAddress(address _nft, address _nftManager, address _taiyaki) public nonReentrant onlyOwner {
+    function changeTokenAddress(address _nft, address _taiyaki) public nonReentrant onlyOwner {
         nftAddress = _nft;
-        nftManager = _nftManager;
         taiyakiAddress = _taiyaki;
     }
 
