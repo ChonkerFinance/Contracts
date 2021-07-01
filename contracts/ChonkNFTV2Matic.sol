@@ -1743,7 +1743,7 @@ pragma solidity 0.6.6;
 
 
 
-contract ChildMintableERC1155 is
+contract ChonkNFTV2Matic is
     ERC1155,
     IChildToken,
     AccessControlMixin,
@@ -1769,7 +1769,7 @@ contract ChildMintableERC1155 is
         public
         ERC1155(uri_)
     {
-        _setupContractId("ChonkGachaNFTMatic");
+        _setupContractId("ChonkNFTV2Matic");
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _setupRole(DEPOSITOR_ROLE, childChainManager);
         _initializeEIP712(uri_);
