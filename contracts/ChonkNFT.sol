@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.6.2;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 
 contract ChonkNFT is ERC1155, AccessControl {
@@ -21,6 +21,10 @@ contract ChonkNFT is ERC1155, AccessControl {
   mapping(uint256 => uint256) public circulatingSupply;
 
   event CardAdded(uint256 id, uint256 maxSupply);
+
+  function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155, AccessControl) returns (bool) {
+    return super.supportsInterface(interfaceId);
+  }
 
   function addCard(uint256 maxSupply) public returns (uint256) {
     require(hasRole(DEFAULT_ADMIN_ROLE, _msgSender()), "Caller is not admin");

@@ -295,7 +295,7 @@ contract ERC165 is IERC165 {
     }
 }
 
-// File: @openzeppelin/contracts/math/SafeMath.sol
+// File: @openzeppelin/contracts/utils/math/SafeMath.sol
 
 // SPDX-License-Identifier: MIT
 

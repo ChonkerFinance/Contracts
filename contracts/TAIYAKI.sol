@@ -1,5 +1,5 @@
 // TAIYAKI Token Contract - Chonker.Finance
-pragma solidity ^0.6.2;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -9,10 +9,8 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 contract TAIYAKI is ERC20, Ownable, AccessControl  {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
-    constructor() ERC20("TAIYAKI", "TAIYAKI") public {
-        uint8 decimals = 18;
-        _setupDecimals(decimals);
-
+    constructor() ERC20("TAIYAKI", "TAIYAKI") {
+        
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _setupRole(MINTER_ROLE, _msgSender());
 

@@ -1,9 +1,9 @@
 // Chonker GachaChonk Machine Manager contract
-pragma solidity ^0.6.2;
+pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import "./ChonkMachine.sol";
 
