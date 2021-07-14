@@ -4,7 +4,7 @@ require('@nomiclabs/hardhat-ethers')
 // require('@eth-optimism/plugins/hardhat/ethers')
 
 require("@nomiclabs/hardhat-etherscan");
-
+require('@openzeppelin/hardhat-upgrades');
 
 module.exports = {
   networks: {
@@ -20,6 +20,10 @@ module.exports = {
     },
     mumbai: {
       url: process.env.MUMBAI_NODE_URL,
+      accounts: [process.env.PRIVATE_KEY]
+    },
+    matic: {
+      url: process.env.MATIC_NODE_URL,
       accounts: [process.env.PRIVATE_KEY]
     }
   },
@@ -51,7 +55,7 @@ module.exports = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200
+            runs: 100
           }
         }
       },

@@ -4,6 +4,7 @@ const sleep = (delay) => new Promise((resolve) => setTimeout(resolve, delay * 10
 
 async function main () {
   const ethers = hre.ethers
+  const upgrades = hre.upgrades;
 
   console.log('network:', await ethers.provider.getNetwork())
 
@@ -17,13 +18,14 @@ async function main () {
     taiyakiLPToken: false,
     taiyakiLPPool: false,
     taiyakiFishSwap: false,
-    NFTManager: true,
-    ChonkMachineManager: true,
+    NFTManager: false,
+    ChonkMachineManager: false,
+    upgradeChonkMachineManager: true
   }
 
   let taiyakiTokenAddress = "0x1A5C71dDF3d71CBB0C0Bc312ff712a52cBe29cD2";
   let taiyakiLPTokenAddress = "";
-  let NFTTokenAddress = "0xBdA6415502b0ddaB9EDA1D09F4f16286273Fdbb6";
+  let NFTTokenAddress = "0x3F989EC5b34489b661D54570e2482A2Adc1EB647";
   let NFTManagerAddress = "";
   /**
    *  Taiyaki LP Token Deploy
@@ -203,26 +205,30 @@ async function main () {
     console.log('Deploying ChonkMachineManager contract')
     const teamAccount = "0xc2A79DdAF7e95C141C20aa1B10F3411540562FF7";
     const liquidityAccount = "0xc2A79DdAF7e95C141C20aa1B10F3411540562FF7";
-    const wethAddress = "0xc778417e063141139fce010982780140aa0cd5ab";
+    const wethAddress = "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619";
 
     const ChonkMachineManager = await ethers.getContractFactory('ChonkMachineManager', {
       signer: (await ethers.getSigners())[0]
     })
+
+    const ChonkMachineManagerContract = await upgrades.deployProxy(ChonkMachineManager, 
+      [teamAccount, liquidityAccount, NFTTokenAddress, taiyakiTokenAddress, wethAddress],
+      {initializer: 'initialize',kind: 'uups'});
+    await ChonkMachineManagerContract.deployed()
   
-    const manager = await ChonkMachineManager.deploy(teamAccount, liquidityAccount, NFTTokenAddress,NFTManagerAddress, taiyakiTokenAddress, wethAddress)
-    await manager.deployed()
-  
-    console.log('ChonkMachineManager  deployed to:', manager.address)
-    await sleep(60);
-    await hre.run("verify:verify", {
-      address: manager.address,
-      contract: "contracts/ChonkMachineManager.sol:ChonkMachineManager",
-      constructorArguments: [
-        teamAccount, liquidityAccount, NFTTokenAddress,NFTManagerAddress, taiyakiTokenAddress, wethAddress
-      ],
+    console.log('ChonkMachineManager  deployed to:', ChonkMachineManagerContract.address)
+  }
+
+  if(deployFlags.upgradeChonkMachineManager) {
+    let ChonkMachineManangerAddress = '0x636436112e6Ae41c4b02ADB0e9b4A6C641AF6E08';
+    const ChonkMachineManageryV2 = await ethers.getContractFactory('ChonkMachineManager', {
+      signer: (await ethers.getSigners())[0]
     })
   
-    console.log('ChonkMachineManager contract verified')
+    console.log('upgrading proxy')
+    await upgrades.upgradeProxy(ChonkMachineManangerAddress, ChonkMachineManageryV2);
+
+    console.log('ChonkMachineManagery V2 upgraded')
   }
 
 }

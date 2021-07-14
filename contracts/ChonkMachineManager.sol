@@ -1,13 +1,14 @@
 // Chonker GachaChonk Machine Manager contract
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 import "./ChonkMachine.sol";
 
-contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
+contract ChonkMachineManager is UUPSUpgradeable, OwnableUpgradeable, AccessControlUpgradeable {
     
     using SafeMath for uint256;
 
@@ -30,7 +31,10 @@ contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
 
     event MachineAdded(uint256 id, address addr, string name, string description, uint256 option_idx, uint256 price, address owner);
     
-    constructor(address _team, address _liquidityAccount, address _nft, address _taiyaki, address _weth) public {
+    function initialize(address _team, address _liquidityAccount, address _nft, address _taiyaki, address _weth) public  initializer {
+        __Ownable_init();
+        __AccessControl_init();
+
         teamAccount = _team;
         liquidityAccount = _liquidityAccount;
         nftAddress = _nft;
@@ -43,6 +47,8 @@ contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(STAFF_ROLE, msg.sender);
     }
+
+    function _authorizeUpgrade(address) internal override onlyOwner {}
 
     function _initOptions() internal {
         options.push([1, 1, 40, 40,  0, 20,  0,  0]);
@@ -63,9 +69,7 @@ contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
         return options.length;
     }
 
-    function addMachine(string calldata _title, string calldata _description, uint256 _option_idx, uint256 _price, address _owner) 
-        external nonReentrant  returns(uint256) {
-
+    function addMachine(string calldata _title, string calldata _description, uint256 _option_idx, uint256 _price, address _owner) external {
         require(hasRole(STAFF_ROLE, msg.sender), "Must be staff to add machine");
         require(hasRole(ARTIST_ROLE, _owner) || hasRole(STAFF_ROLE, _owner), "Machine Owner must be artist or staff");
         require(_option_idx < options.length, "Invalid option idx");
@@ -94,62 +98,59 @@ contract ChonkMachineManager is ReentrancyGuard, Ownable, AccessControl {
         lastMachineIdx ++;
     }
 
-    function addStaffAccount(address account) public nonReentrant onlyOwner {
+    function addStaffAccount(address account) public {
         require(account != address(0), "staff is zero address");
         grantRole(STAFF_ROLE, account);
-        for(uint256 i = 0; i < machineIndices.length; i++) {
-            ChonkMachine(machineIndices[i]).addStaffAccount(account);
-        }
     }
 
-    function removeStaffAccount(address account) public nonReentrant onlyOwner {
+    function removeStaffAccount(address account) public {
         require(account != address(0), "staff is zero address");
         revokeRole(STAFF_ROLE, account);
-        for(uint256 i = 0; i < machineIndices.length; i++) {
-            ChonkMachine(machineIndices[i]).removeStaffAccount(account);
-        }
     }
 
-    function transferAdministrator(address account) public nonReentrant onlyOwner {
+    function isStaff(address account) public view returns(bool) {
+        return hasRole(STAFF_ROLE, account);
+    }
+
+    function transferAdministrator(address account) public onlyOwner {
         require(account != address(0), "new administrator is zero address");
         
         grantRole(STAFF_ROLE, account);
         grantRole(DEFAULT_ADMIN_ROLE, account);
 
-        for(uint256 i = 0; i < machineIndices.length; i++) {
-            ChonkMachine(machineIndices[i]).transferAdministrator(account);
-        }
         revokeRole(STAFF_ROLE, msg.sender);
         revokeRole(DEFAULT_ADMIN_ROLE, msg.sender);
 
         transferOwnership(account);
     }
 
-    function changeTokenAddress(address _nft, address _taiyaki) public nonReentrant onlyOwner {
+    function isAdministrator(address account) public view returns(bool) {
+        return account == owner();
+    }
+
+    function changeTokenAddress(address _nft, address _taiyaki) public onlyOwner {
         nftAddress = _nft;
         taiyakiAddress = _taiyaki;
     }
 
-    function changeTeamAccount(address account) public nonReentrant onlyOwner {
+    function changeTeamAccount(address account) public onlyRole(DEFAULT_ADMIN_ROLE) {
         require(account != address(0), "New team account is zero address");
-
-        for(uint256 i = 0; i < machineIndices.length; i++) {
-            ChonkMachine(machineIndices[i]).changeTeamAccount(account);
-        }
+        teamAccount = account;
     }
 
-    function changeMachineOption(address m_address, uint256 _option_idx) public nonReentrant {
+    function changeLiquidityAccount(address account) public onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(account != address(0), "New liquidity account is zero address");
+        liquidityAccount = account;
+    }
+
+    function getPaymentAccounts() public view returns(address, address) {
+        return (teamAccount, liquidityAccount);
+    }
+
+    function changeMachineOption(address m_address, uint256 _option_idx) public {
         ChonkMachine machine = machines[m_address];
         require(machine.isStaffAccount(msg.sender), "only for staff account");
         
         machine.setupMachineOption(_option_idx, options[_option_idx]);
-    }
-
-    function changeLiquidityAccount(address account) public nonReentrant onlyOwner {
-        require(account != address(0), "New liquidity account is zero address");
-
-        for(uint256 i = 0; i < machineIndices.length; i++) {
-            ChonkMachine(machineIndices[i]).changeLiquidityAccount(account);
-        }
     }
 }

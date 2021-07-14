@@ -1,4 +1,5 @@
 // Chonker Gachapon Machine contract 
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -14,6 +15,11 @@ interface IChonkNFT {
         bytes calldata data) external;
   function balanceOf(address account, uint256 id) external view returns (uint256);
   function mint(address to, uint256 id, uint256 amount) external;
+}
+
+interface IChonkMachineManager {
+    function isStaff(address account) external view returns(bool);
+    function getPaymentAccounts() external view returns(address, address);
 }
 
 contract ChonkMachine is ERC1155Holder {
@@ -94,7 +100,7 @@ contract ChonkMachine is ERC1155Holder {
                 address _administrator,
                 address _teamAccount,
                 address _liquidityAccount
-                ) public {
+                ) {
         machineId = _machineId;
         playOncePrice = _price;
     
@@ -296,11 +302,11 @@ contract ChonkMachine is ERC1155Holder {
     // ***************************
     // For Admin Account ***********
     // ***************************
-    function addStaffAccount(address account) public onlyManager {
+    function addStaffAccount(address account) public onlyOwner {
         _staffAccountSet.add(account);
     }
 
-    function removeStaffAccount(address account) public onlyManager {
+    function removeStaffAccount(address account) public onlyOwner {
         _staffAccountSet.remove(account);
     }
 
@@ -316,7 +322,7 @@ contract ChonkMachine is ERC1155Holder {
         return _staffAccountSet.length();
     }
 
-    function transferAdministrator(address account) public onlyManager {
+    function transferAdministrator(address account) public onlyAdministrator {
         require(account != address(0), "Ownable: new owner is zero address");
         administrator = account;
     }
@@ -337,12 +343,12 @@ contract ChonkMachine is ERC1155Holder {
         artistAccount = account;
     }
 
-    function changeTeamAccount(address account) public onlyManager {
+    function changeTeamAccount(address account) public onlyAdministrator {
         require(account != address(0), "New team account is zero address");
         teamAccount = account;
     }
 
-    function changeLiquidityAccount(address account) public onlyManager {
+    function changeLiquidityAccount(address account) public onlyAdministrator {
         require(account != address(0), "New liquidity account is zero address");
         liquidityAccount = account;
     }
