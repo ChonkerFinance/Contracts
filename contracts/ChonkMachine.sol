@@ -81,11 +81,13 @@ contract ChonkMachine is ERC1155Holder {
     address public administrator;
 
     // Currency of the game machine, like Taiyaki, WETH
-    IERC20 public currencyToken;
+    IERC20 public taiyakiToken;
+    IERC20 public wethToken;
     IChonkNFT public nftToken;
 
     uint256 public playOncePrice;
-    
+
+
     event AddCard(uint256 cardId, uint256 amount, uint256 cardAmount);
     event RemoveCard(uint256 card, uint256 removeAmount, uint256 cardAmount);
     event RunMachine(address account, uint256 times, uint256 playFee);
@@ -94,7 +96,7 @@ contract ChonkMachine is ERC1155Holder {
 
     constructor(uint256 _machineId, //machine id
                 string memory _machineTitle, // machine title.
-                string memory _machineDescription, // machine title.
+                string memory _machineDescription, // machine description
                 uint256 _price,
                 address _owner,
                 address _administrator,
@@ -139,10 +141,11 @@ contract ChonkMachine is ERC1155Holder {
         machineOption = option;
     }
 
-    function setupTokenAddresses(address _nft, address _currency) external onlyManager {
+    function setupTokenAddresses(address _nft, address _taiyaki, address _weth) external onlyManager {
         nftToken = IChonkNFT(_nft);
-        currencyToken = IERC20(_currency);
-        _salt = uint256(keccak256(abi.encodePacked(_nft, _currency, block.timestamp))).mod(10000);
+        taiyakiToken = IERC20(_taiyaki);
+        wethToken = IERC20(_weth);
+        _salt = uint256(keccak256(abi.encodePacked(_nft, _taiyaki, block.timestamp))).mod(10000);
     }
 
     /**
@@ -206,16 +209,17 @@ contract ChonkMachine is ERC1155Holder {
     function _transferAndBurnToken(uint256 amount) private {
         uint256 totalPaid = 0;
         address[6] memory accounts = [liquidityAccount, liquidityAccount, liquidityAccount, teamAccount, artistAccount, burnAccount];
+        IERC20 payToken = machineOption[1] == 1 ? wethToken : taiyakiToken;
         for(uint i = 0 ; i < 6; i++) {
             if(machineOption[i+2] != 0 && accounts[i] != address(0x0)) {
                 uint256 rateAmount = amount.mul(machineOption[i+2]).div(100);
-                currencyToken.transferFrom(msg.sender, accounts[i], rateAmount);
+                payToken.transferFrom(msg.sender, accounts[i], rateAmount);
                 totalAmounts[i] = totalAmounts[i].add(rateAmount);
                 totalPaid = totalPaid.add(rateAmount);
             }
         }
         uint256 remainingAmount = amount.sub(totalPaid);
-        currencyToken.transferFrom(msg.sender, teamAccount, remainingAmount);
+        payToken.transferFrom(msg.sender, teamAccount, remainingAmount);
     }
 
 
@@ -242,7 +246,7 @@ contract ChonkMachine is ERC1155Holder {
     }
 
     function _getRandomNumebr(uint256 seed, uint256 salt, uint256 mod) view private returns(uint256) {
-        return uint256(keccak256(abi.encode(block.timestamp, block.difficulty, block.coinbase, blockhash(block.number + 1), block.gaslimit, seed, block.number))).mod(mod).add(seed).add(salt);
+        return uint256(keccak256(abi.encode(block.timestamp, block.difficulty, block.coinbase, blockhash(block.number + 1), seed, salt, block.number))).mod(mod);
     }
 
     function _createARound(uint256 times) private {
@@ -422,7 +426,7 @@ contract ChonkMachine is ERC1155Holder {
     }
 
     modifier onlyManager() {
-        require(address(msg.sender) == manager, "Only for manager.");
+        require(address(msg.sender) == manager || address(msg.sender) == administrator, "Only for manager.");
         _;
     }
 

@@ -20,7 +20,7 @@ contract ChonkMachineManager is UUPSUpgradeable, OwnableUpgradeable, AccessContr
     address public nftAddress;
     address public taiyakiAddress;
     address public wethAddress;
-
+    
     /* Gachapon Machine Options */
     uint256[8][] public options;     // [Team?, ETH-Spin?, TaiyakiLP %, Chonk Buyback %, Chonk LP %, Team Funds %, Artist Funds%, Burn %]
 
@@ -88,7 +88,7 @@ contract ChonkMachineManager is UUPSUpgradeable, OwnableUpgradeable, AccessContr
         );
 
         m.setupMachineOption(_option_idx, option);
-        m.setupTokenAddresses(nftAddress, (option[1] == 1 ? wethAddress : taiyakiAddress));
+        m.setupTokenAddresses(nftAddress, taiyakiAddress, wethAddress);
         
         machines[address(m)] = m;
         machineIndices.push(address(m));
@@ -133,12 +133,12 @@ contract ChonkMachineManager is UUPSUpgradeable, OwnableUpgradeable, AccessContr
         taiyakiAddress = _taiyaki;
     }
 
-    function changeTeamAccount(address account) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function changeTeamAccount(address account) public onlyOwner {
         require(account != address(0), "New team account is zero address");
         teamAccount = account;
     }
 
-    function changeLiquidityAccount(address account) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function changeLiquidityAccount(address account) public onlyOwner {
         require(account != address(0), "New liquidity account is zero address");
         liquidityAccount = account;
     }
