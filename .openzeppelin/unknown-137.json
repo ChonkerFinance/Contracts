@@ -10,6 +10,11 @@
       "address": "0x3D525a881507028B8641074dcDB4751B75a4A787",
       "txHash": "0xa673808ee500b5a28da571f7ded6ac995affe8dc699c9cbc6c89d249fdf38cda",
       "kind": "uups"
+    },
+    {
+      "address": "0x1ae6d9b8d5BD32Fee321b4c15F796c9b984F97F5",
+      "txHash": "0x326131e6054eecafe63870d2f4a617cab1c1f987a1925cf383a0b86ca6eef06d",
+      "kind": "uups"
     }
   ],
   "impls": {
@@ -326,6 +331,182 @@
             "label": "mapping(address => contract ChonkMachine)"
           },
           "t_contract(ChonkMachine)9701": {
+            "label": "contract ChonkMachine"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]"
+          },
+          "t_mapping(t_bytes32,t_struct(RoleData)81_storage)": {
+            "label": "mapping(bytes32 => struct AccessControlUpgradeable.RoleData)"
+          },
+          "t_bytes32": {
+            "label": "bytes32"
+          },
+          "t_struct(RoleData)81_storage": {
+            "label": "struct AccessControlUpgradeable.RoleData",
+            "members": [
+              {
+                "label": "members",
+                "type": "t_mapping(t_address,t_bool)"
+              },
+              {
+                "label": "adminRole",
+                "type": "t_bytes32"
+              }
+            ]
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)"
+          },
+          "t_bool": {
+            "label": "bool"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]"
+          }
+        }
+      }
+    },
+    "d4ef0a659d7fd76fcc35f73af862517a14a7df8ade02f00441ca4e4b3bd15474": {
+      "address": "0x3856Aa13C3610C5F3c16CdeCe37985DA1fBf998C",
+      "txHash": "0x1aaa519e6c8105807f3eafb7fa8de9f1404f5a467ac010bb2b93b228240d8146",
+      "layout": {
+        "storage": [
+          {
+            "contract": "Initializable",
+            "label": "_initialized",
+            "type": "t_bool",
+            "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:21"
+          },
+          {
+            "contract": "Initializable",
+            "label": "_initializing",
+            "type": "t_bool",
+            "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\Initializable.sol:26"
+          },
+          {
+            "contract": "ERC1967UpgradeUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin\\contracts-upgradeable\\proxy\\ERC1967\\ERC1967UpgradeUpgradeable.sol:233"
+          },
+          {
+            "contract": "UUPSUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin\\contracts-upgradeable\\proxy\\utils\\UUPSUpgradeable.sol:64"
+          },
+          {
+            "contract": "ContextUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin\\contracts-upgradeable\\utils\\ContextUpgradeable.sol:30"
+          },
+          {
+            "contract": "OwnableUpgradeable",
+            "label": "_owner",
+            "type": "t_address",
+            "src": "@openzeppelin\\contracts-upgradeable\\access\\OwnableUpgradeable.sol:21"
+          },
+          {
+            "contract": "OwnableUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)49_storage",
+            "src": "@openzeppelin\\contracts-upgradeable\\access\\OwnableUpgradeable.sol:77"
+          },
+          {
+            "contract": "ERC165Upgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)50_storage",
+            "src": "@openzeppelin\\contracts-upgradeable\\utils\\introspection\\ERC165Upgradeable.sol:35"
+          },
+          {
+            "contract": "AccessControlUpgradeable",
+            "label": "_roles",
+            "type": "t_mapping(t_bytes32,t_struct(RoleData)81_storage)",
+            "src": "@openzeppelin\\contracts-upgradeable\\access\\AccessControlUpgradeable.sol:77"
+          },
+          {
+            "contract": "AccessControlUpgradeable",
+            "label": "__gap",
+            "type": "t_array(t_uint256)49_storage",
+            "src": "@openzeppelin\\contracts-upgradeable\\access\\AccessControlUpgradeable.sol:259"
+          },
+          {
+            "contract": "ChonkMachineManager",
+            "label": "teamAccount",
+            "type": "t_address",
+            "src": "contracts\\ChonkMachineManager.sol:18"
+          },
+          {
+            "contract": "ChonkMachineManager",
+            "label": "liquidityAccount",
+            "type": "t_address",
+            "src": "contracts\\ChonkMachineManager.sol:19"
+          },
+          {
+            "contract": "ChonkMachineManager",
+            "label": "nftAddress",
+            "type": "t_address",
+            "src": "contracts\\ChonkMachineManager.sol:20"
+          },
+          {
+            "contract": "ChonkMachineManager",
+            "label": "taiyakiAddress",
+            "type": "t_address",
+            "src": "contracts\\ChonkMachineManager.sol:21"
+          },
+          {
+            "contract": "ChonkMachineManager",
+            "label": "wethAddress",
+            "type": "t_address",
+            "src": "contracts\\ChonkMachineManager.sol:22"
+          },
+          {
+            "contract": "ChonkMachineManager",
+            "label": "options",
+            "type": "t_array(t_array(t_uint256)8_storage)dyn_storage",
+            "src": "contracts\\ChonkMachineManager.sol:25"
+          },
+          {
+            "contract": "ChonkMachineManager",
+            "label": "lastMachineIdx",
+            "type": "t_uint256",
+            "src": "contracts\\ChonkMachineManager.sol:27"
+          },
+          {
+            "contract": "ChonkMachineManager",
+            "label": "machines",
+            "type": "t_mapping(t_address,t_contract(ChonkMachine)9711)",
+            "src": "contracts\\ChonkMachineManager.sol:29"
+          },
+          {
+            "contract": "ChonkMachineManager",
+            "label": "machineIndices",
+            "type": "t_array(t_address)dyn_storage",
+            "src": "contracts\\ChonkMachineManager.sol:30"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address"
+          },
+          "t_array(t_array(t_uint256)8_storage)dyn_storage": {
+            "label": "uint256[8][]"
+          },
+          "t_array(t_uint256)8_storage": {
+            "label": "uint256[8]"
+          },
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_mapping(t_address,t_contract(ChonkMachine)9711)": {
+            "label": "mapping(address => contract ChonkMachine)"
+          },
+          "t_contract(ChonkMachine)9711": {
             "label": "contract ChonkMachine"
           },
           "t_array(t_address)dyn_storage": {

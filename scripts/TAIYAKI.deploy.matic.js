@@ -19,13 +19,13 @@ async function main () {
     taiyakiLPPool: false,
     taiyakiFishSwap: false,
     NFTManager: false,
-    ChonkMachineManager: true,
-    upgradeChonkMachineManager: false
+    ChonkMachineManager: false,
+    upgradeChonkMachineManager: true
   }
 
   let taiyakiTokenAddress = "0x1A5C71dDF3d71CBB0C0Bc312ff712a52cBe29cD2";
   let taiyakiLPTokenAddress = "";
-  let NFTTokenAddress = "0x3F989EC5b34489b661D54570e2482A2Adc1EB647";
+  let NFTTokenAddress = "0x87a1c5A7C268C50CE016Df080fd8159008cEcd35";
   let NFTManagerAddress = "";
   /**
    *  Taiyaki LP Token Deploy
@@ -203,8 +203,8 @@ async function main () {
    if(deployFlags.ChonkMachineManager) {
     console.log(' --------------------------------------- ')
     console.log('Deploying ChonkMachineManager contract')
-    const teamAccount = "0xFA3916579cFD0F4B8193B144fc9D6Ce14dfdb082";
-    const liquidityAccount = "0xFA3916579cFD0F4B8193B144fc9D6Ce14dfdb082";
+    const teamAccount = "0x5f7D2506f705629190F2c59760445bca0578F805";
+    const liquidityAccount = "0x5f7D2506f705629190F2c59760445bca0578F805";
     const wethAddress = "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619";
 
     const ChonkMachineManager = await ethers.getContractFactory('ChonkMachineManager', {
@@ -220,7 +220,7 @@ async function main () {
   }
 
   if(deployFlags.upgradeChonkMachineManager) {
-    let ChonkMachineManangerAddress = '0x09342029F227A8E83Bd8e95E94a3b58ABe11e65b';
+    let ChonkMachineManangerAddress = '0x1ae6d9b8d5BD32Fee321b4c15F796c9b984F97F5';
     const ChonkMachineManageryV2 = await ethers.getContractFactory('ChonkMachineManager', {
       signer: (await ethers.getSigners())[0]
     })

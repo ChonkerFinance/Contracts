@@ -213,13 +213,17 @@ contract ChonkMachine is ERC1155Holder {
         for(uint i = 0 ; i < 6; i++) {
             if(machineOption[i+2] != 0 && accounts[i] != address(0x0)) {
                 uint256 rateAmount = amount.mul(machineOption[i+2]).div(100);
-                payToken.transferFrom(msg.sender, accounts[i], rateAmount);
-                totalAmounts[i] = totalAmounts[i].add(rateAmount);
-                totalPaid = totalPaid.add(rateAmount);
+                if(rateAmount > 0) {
+                    payToken.transferFrom(msg.sender, accounts[i], rateAmount);
+                    totalAmounts[i] = totalAmounts[i].add(rateAmount);
+                    totalPaid = totalPaid.add(rateAmount);
+                }
             }
         }
         uint256 remainingAmount = amount.sub(totalPaid);
-        payToken.transferFrom(msg.sender, teamAccount, remainingAmount);
+        if(remainingAmount > 0) {
+            payToken.transferFrom(msg.sender, teamAccount, remainingAmount);
+        }
     }
 
 

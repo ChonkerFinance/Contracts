@@ -29,6 +29,7 @@ contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
     uint256 constant public PERCENTS_DIVIDER = 1000;
 
     address public ChonkAddress;
+    address public LPAddress;
     address public TaiyakiAddress;
     address public NFTAddress;
     uint256 public chonkChainId;
@@ -75,7 +76,7 @@ contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
     event RedeemedNFT(address indexed user, uint256 cardId);
     event RegularWithdrawn(address indexed user, uint256 amount);
 
-    constructor(address _chonk, address _taiyaki, address _nft) public {
+    constructor(address _chonk, address _taiyaki, address _nft) {
         ChonkAddress = _chonk;
         TaiyakiAddress = _taiyaki;
         NFTAddress = _nft;
