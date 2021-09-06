@@ -116,6 +116,10 @@ contract LPStaking is ReentrancyGuard, Pausable, Ownable {
 
         poolInfo[_pid].unstakingFee = _fee;
     }
+
+    function setFeeAddress(address _addr) external onlyOwner {
+        feeAddress = _addr;
+    }
     
     function setMinMaxAmount(uint256 _pid, uint256 _min, uint256 _max) external onlyOwner {
         require(_max > 0 && _max >= _min, "Invalid Max amount");
