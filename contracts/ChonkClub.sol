@@ -1,4 +1,6 @@
 // ChonkClub contract - chonker.finance
+
+// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -55,34 +57,21 @@ contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
         bool bChonkChainStaked;
         uint256 chonkChainUpdatedAt;
 
-        uint256 regularStaked;
-        uint256 rstakeUpdatedAt;
-        uint256 rstakeRewards;  
         bool valid;
     }
     mapping(address => Holder) public holders;
 
-    /**
-        Regular Staking
-     */
-    uint256 public rstakeRewardPerWeek;   // Percentage - Max 1000
-
-
-
+    
     event TierChanged(uint256 id, uint256 chonk, uint256 taiyakiPerMonth, uint256 cardId);
     event Staked(address indexed user, uint256 tier_id);
-    event RegularStaked(address indexed user, uint256 amount);
     event ClaimedTaiyaki(address indexed user, uint256 amount);
     event RedeemedNFT(address indexed user, uint256 cardId);
-    event RegularWithdrawn(address indexed user, uint256 amount);
 
     constructor(address _chonk, address _taiyaki, address _nft) {
         ChonkAddress = _chonk;
         TaiyakiAddress = _taiyaki;
         NFTAddress = _nft;
         chonkChainId = 1;
-
-        rstakeRewardPerWeek = 100; // 10%
 
         _changeTier(1, 50  * 1e18, 1e18, 0);
         _changeTier(2, 100 * 1e18, 2e18, 0);
@@ -96,10 +85,6 @@ contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
 
     function setChonkChanId(uint256 _card) public onlyOwner {
         chonkChainId = _card;
-    }
-
-    function setRewardPerWeek(uint256 _reward) external onlyOwner {
-        rstakeRewardPerWeek = _reward;
     }
 
     function _changeTier(uint256 id, uint256 chonk, uint256 taiyakiPerMonth, uint256 card) internal returns(bool){
@@ -131,26 +116,32 @@ contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
         if (account != address(0)) {
             holders[account].taiyakiRewards = earnedTaiyaki(account).add(earnedTaiyakiFromChonkChain(account));
             holders[account].gyozaRewards   = earnedGyoza(account);
-            holders[account].rstakeRewards  = earnedRStake(account);
             holders[account].taiyakiUpdatedAt = block.timestamp;
             holders[account].gyozaUpdatedAt   = block.timestamp;
             holders[account].chonkChainUpdatedAt = block.timestamp;
-            holders[account].rstakeUpdatedAt = block.timestamp;
         }
         _;
     }
 
-    modifier updateRStakeReward(address account) {
+    function manualUpdate(address account) public {
         if (account != address(0)) {
-            holders[account].rstakeRewards  = earnedRStake(account);
-            holders[account].rstakeUpdatedAt = block.timestamp;
+            holders[account].taiyakiRewards = earnedTaiyaki(account).add(earnedTaiyakiFromChonkChain(account));
+            holders[account].gyozaRewards   = earnedGyoza(account);
+            holders[account].taiyakiUpdatedAt = block.timestamp;
+            holders[account].gyozaUpdatedAt   = block.timestamp;
+            holders[account].chonkChainUpdatedAt = block.timestamp;
         }
-        _;
     }
+
 
     function tierOf(address account) public view returns (uint256) {
         return holders[account].tier_id;
     }
+
+    function balanceOf(address account) public view returns (uint256) {
+        return tiers[tierOf(account)].chonk;
+    }
+
 
     /*
         Calculate earned Taiyaki amount 
@@ -193,17 +184,6 @@ contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
         return holder.gyozaRewards.add(rewards);
     }
 
-
-    /*
-        Calculate earned RStake Reward 
-    */
-    function earnedRStake(address account) public view returns (uint256) {
-        uint256 blockTime = block.timestamp;
-        Holder memory holder = holders[account];
-
-        uint256 rewards = (blockTime.sub(holder.rstakeUpdatedAt)).mul(holder.regularStaked).mul(rstakeRewardPerWeek).div(PERCENTS_DIVIDER.mul(604800));
-        return holder.rstakeRewards.add(rewards);
-    }
 
     /*
         Stake - require tier Id 
@@ -263,7 +243,7 @@ contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
         holder.bChonkChainStaked = false;
     }
 
-    function exit() external {
+    function exit() external updateReward(_msgSender()) {
         Holder storage holder = holders[_msgSender()];
         require(holder.valid, "Invalid holder");
 
@@ -276,48 +256,8 @@ contract ChonkClub is Ownable, ReentrancyGuard, ERC1155Holder {
         }
         holder.tier_id = 0;
         holder.valid = false;
+        holder.taiyakiRewards = 0;
+        holder.gyozaRewards = 0;
         holder.bChonkChainStaked = false;
-    }
-
-
-
-    /*
-        Stake Regular- require amount
-    */
-    function rstake(uint256 amount) public updateRStakeReward(_msgSender()) nonReentrant {
-        require(amount.add(holders[_msgSender()].rstakeRewards) >= 1e18, "Cannot stake less than 1 CHONK");
-        require(amount.add(holders[_msgSender()].rstakeRewards) < 50e18, "Cannot stake more than 50 CHONK");
-        
-        require(IERC20(ChonkAddress).transferFrom(_msgSender(), address(this), amount), "failed to transfer Chonk");
-        holders[_msgSender()].regularStaked = holders[_msgSender()].regularStaked.add(amount);
-        emit RegularStaked(_msgSender(), amount);
-    }
-
-    function withdrawRStake(uint256 amount) public updateRStakeReward(_msgSender()) nonReentrant {
-        require(amount > 0, "Cannot withdraw 0");
-        Holder storage holder = holders[_msgSender()];
-        require(amount <= holder.regularStaked, "Cannot withdraw more than balance");
-
-        require(IERC20(ChonkAddress).transfer(_msgSender(), amount), "Transfer failed");
-        holder.regularStaked = holder.regularStaked.sub(amount);
-        emit RegularWithdrawn(_msgSender(), amount);
-    }
-
-    function claimTaiyakiFromRStake(uint256 amount) public updateRStakeReward(_msgSender()) nonReentrant {
-        require(amount > 0, "Invalid Amount");
-        Holder storage holder = holders[_msgSender()];
-        require(amount <= holder.rstakeRewards, "Cannot withdraw more than balance");
-        ITaiyaki(TaiyakiAddress).mint(_msgSender(), amount);
-        holder.rstakeRewards = holder.rstakeRewards.sub(amount);
-        emit ClaimedTaiyaki(_msgSender(), amount);
-    }
-
-    function exitRStake() external {
-        Holder storage holder = holders[_msgSender()];
-    
-        claimTaiyakiFromRStake(holder.rstakeRewards);
-        IERC20(ChonkAddress).transfer(_msgSender(), holder.regularStaked);
-
-        holder.regularStaked = 0;
     }
 }
